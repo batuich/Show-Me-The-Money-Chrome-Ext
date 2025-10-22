@@ -7,7 +7,7 @@
   "content_scripts": [
     {
       "matches": [
-        "https://cursor.com/spending"
+        "*://*.cursor.com/dashboard*"
       ],
       "js": [
         "utils/storage.js",

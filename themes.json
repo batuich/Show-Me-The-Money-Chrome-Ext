@@ -1,0 +1,113 @@
+{
+  "cursor": {
+    "common": {
+      "radius": "8px",
+      "padding": "6px"
+    },
+    "button": {
+      "default": {
+        "bg": "#222",
+        "text": "#fff"
+      },
+      "hover": {
+        "bg": "#333"
+      }
+    },
+    "panel": {
+      "default": {
+        "bg": "#111",
+        "border": "#222",
+        "text": "#fff"
+      }
+    },
+    "tooltip": {
+      "default": {
+        "bg": "#ff3333",
+        "text": "#fff",
+        "fontSize": "12px"
+      }
+    },
+    "labels": {
+      "missingData": {
+        "text": "Not enough data for selected period",
+        "color": "#ff5555",
+        "fontSize": "12px",
+        "position": "belowTotal"
+      }
+    }
+  },
+  "dark": {
+    "common": {
+      "radius": "8px",
+      "padding": "6px"
+    },
+    "button": {
+      "default": {
+        "bg": "#333",
+        "text": "#fff"
+      },
+      "hover": {
+        "bg": "#444"
+      }
+    },
+    "panel": {
+      "default": {
+        "bg": "#222",
+        "border": "#333",
+        "text": "#fff"
+      }
+    },
+    "tooltip": {
+      "default": {
+        "bg": "#ff3333",
+        "text": "#fff",
+        "fontSize": "12px"
+      }
+    },
+    "labels": {
+      "missingData": {
+        "text": "Not enough data for selected period",
+        "color": "#ff5555",
+        "fontSize": "12px",
+        "position": "belowTotal"
+      }
+    }
+  },
+  "light": {
+    "common": {
+      "radius": "8px",
+      "padding": "6px"
+    },
+    "button": {
+      "default": {
+        "bg": "#eee",
+        "text": "#000"
+      },
+      "hover": {
+        "bg": "#ddd"
+      }
+    },
+    "panel": {
+      "default": {
+        "bg": "#fff",
+        "border": "#ccc",
+        "text": "#000"
+      }
+    },
+    "tooltip": {
+      "default": {
+        "bg": "#ff3333",
+        "text": "#fff",
+        "fontSize": "12px"
+      }
+    },
+    "labels": {
+      "missingData": {
+        "text": "Not enough data for selected period",
+        "color": "#ff0000",
+        "fontSize": "12px",
+        "position": "belowTotal"
+      }
+    }
+  }
+}

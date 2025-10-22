@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Show Me The Money",
+  "version": "1.0",
+  "description": "Automatically summarizes credit usage on specified websites.",
+  "permissions": [],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://cursor.com/spending"
+      ],
+      "js": [
+        "utils/storage.js",
+        "utils/domParser.js",
+        "utils/dateHelpers.js",
+        "utils/uiHelpers.js",
+        "content.js"
+      ],
+      "css": []
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/icons/drag.svg",
+        "themes.json"
+      ],
+      "matches": [
+        "https://cursor.com/*"
+      ]
+    }
+  ],
+  "action": {},
+  "icons": {}
+}

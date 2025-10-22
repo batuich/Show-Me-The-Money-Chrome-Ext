@@ -16,42 +16,78 @@ function simpleHash(str) {
 }
 
 /**
- * Parses the transaction table on the page to extract spending data.
+ * Parses a `div`-based table (found on `cursor.com/dashboard`).
+ * @param {HTMLElement} table The table element.
+ * @returns {Array} An array of transaction objects.
+ */
+function parseDivTable(table) {
+    const transactions = [];
+    const rows = table.querySelectorAll('div[role="row"]');
+
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('div[role="cell"]');
+        if (cells.length >= 2) {
+            const dateText = cells[0].innerText.trim();
+            const amountText = cells[1].innerText.trim();
+            const date = new Date(dateText);
+
+            if (!isNaN(date.getTime())) {
+                const amount = parseFloat(amountText);
+                if (!isNaN(amount)) {
+                    const rowContent = `${dateText}-${amountText}`;
+                    const id = simpleHash(rowContent);
+                    transactions.push({ id, date: date.toISOString().split('T')[0], amount: Math.abs(amount) });
+                }
+            }
+        }
+    });
+    return transactions;
+}
+
+/**
+ * Parses a standard `<table>` element (found on `cursor.com/spending`).
+ * @param {HTMLElement} table The table element.
+ * @returns {Array} An array of transaction objects.
+ */
+function parseHtmlTable(table) {
+    const transactions = [];
+    const rows = table.querySelectorAll('tbody tr');
+
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 3) {
+            const date = cells[0].innerText.trim();
+            const description = cells[1].innerText.trim();
+            const amountText = cells[2].innerText.trim();
+            const amount = parseFloat(amountText.replace(/[^0-9.]/g, ''));
+
+            if (date && !isNaN(amount)) {
+                const rowContent = `${date}-${description}-${amountText}`;
+                const id = simpleHash(rowContent);
+                transactions.push({ id, date, amount });
+            }
+        }
+    });
+    return transactions;
+}
+
+/**
+ * Parses the transaction table on the page, supporting multiple structures.
  * @returns {Array} An array of transaction objects.
  */
 function parseTransactionTable() {
-  const transactions = [];
-  // Assuming the main data is within the first table found.
-  // This selector may need to be more specific for other sites.
-  const table = document.querySelector('table');
-
-  if (!table) {
-    console.log("Show Me The Money: No table found on the page.");
-    return transactions;
-  }
-
-  const rows = table.querySelectorAll('tbody tr');
-
-  rows.forEach(row => {
-    const cells = row.querySelectorAll('td');
-    // Assuming at least 3 columns: Date, Description, Amount
-    if (cells.length >= 3) {
-      const date = cells[0].innerText.trim();
-      const description = cells[1].innerText.trim();
-      const amountText = cells[2].innerText.trim();
-
-      // Extract numeric value from amount string (e.g., "-$1.50" -> 1.50)
-      const amount = parseFloat(amountText.replace(/[^0-9.]/g, ''));
-
-      if (date && !isNaN(amount)) {
-        // Create a unique ID from the row's content to prevent duplicates
-        const rowContent = `${date}-${description}-${amountText}`;
-        const id = simpleHash(rowContent);
-
-        transactions.push({ id, date, amount });
-      }
+    const divTable = document.querySelector('div[role="table"]');
+    if (divTable) {
+        console.log("Show Me The Money: Found div-based table.");
+        return parseDivTable(divTable);
     }
-  });
 
-  return transactions;
+    const htmlTable = document.querySelector('table');
+    if (htmlTable) {
+        console.log("Show Me The Money: Found HTML table.");
+        return parseHtmlTable(htmlTable);
+    }
+
+    console.log("Show Me The Money: No recognizable transaction table found.");
+    return [];
 }

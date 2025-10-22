@@ -17,6 +17,35 @@ function loadThemes() {
 
 
 /**
+ * Positions the panel initially next to the target element.
+ * @param {HTMLElement} panel The panel element.
+ */
+function positionPanelInitially(panel) {
+  const targetElement = document.querySelector('button[aria-label="User menu"]');
+  if (targetElement) {
+    const targetRect = targetElement.getBoundingClientRect();
+    panel.style.position = 'absolute'; // Use absolute positioning
+
+    // Defer calculation to ensure panel has dimensions
+    setTimeout(() => {
+        const panelRect = panel.getBoundingClientRect();
+        const top = targetRect.top + (targetRect.height / 2) - (panelRect.height / 2) + window.scrollY;
+        const left = targetRect.left - panelRect.width - 10 + window.scrollX; // 10px margin
+
+        panel.style.top = `${top}px`;
+        panel.style.left = `${left}px`;
+
+        savePanelPosition({ top: panel.style.top, left: panel.style.left });
+    }, 0);
+  } else {
+    console.warn('Show Me The Money: Target element for initial positioning not found. Using fallback.');
+    panel.style.position = 'fixed';
+    panel.style.top = '20px';
+    panel.style.left = '20px';
+  }
+}
+
+/**
  * Creates the main floating panel.
  * @param {string} themeName The name of the theme to use.
  * @returns {HTMLElement} The created panel element.
@@ -31,9 +60,7 @@ function createPanel(themeName = 'dark') {
 
   const panel = document.createElement('div');
   panel.id = 'show-me-the-money-panel';
-  panel.style.position = 'fixed';
-  panel.style.top = '20px';
-  panel.style.left = '20px';
+  // Position is set after appending to body
   panel.style.backgroundColor = theme.bg;
   panel.style.border = `1px solid ${theme.border}`;
   panel.style.borderRadius = common.radius;
@@ -71,6 +98,12 @@ function createPanel(themeName = 'dark') {
   makeDraggable(panel, dragHandle);
 
   document.body.appendChild(panel);
+
+  // After appending, attempt to restore position. If not found, set initial position.
+  if (!restorePanelPosition(panel)) {
+      positionPanelInitially(panel);
+  }
+
   return panel;
 }
 
@@ -80,7 +113,8 @@ function createPanel(themeName = 'dark') {
  */
 function restorePanelPosition(panel) {
   const savedPosition = getPanelPosition();
-  if (savedPosition) {
+  if (savedPosition && savedPosition.top && savedPosition.left) {
+    panel.style.position = 'absolute'; // Position relative to the body
     panel.style.top = savedPosition.top;
     panel.style.left = savedPosition.left;
     return true; // Position was restored

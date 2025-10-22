@@ -11,15 +11,7 @@ async function init() {
   // Create the panel and insert it into the DOM
   const panel = createPanel(theme);
 
-  // Position the panel
-  if (!restorePanelPosition(panel)) {
-    const userMenu = document.querySelector('[aria-label="User menu"]');
-    if (userMenu) {
-      const rect = userMenu.getBoundingClientRect();
-      panel.style.top = `${rect.top}px`;
-      panel.style.left = `${rect.left - panel.offsetWidth - 10}px`;
-    }
-  }
+  // The panel's position is handled by createPanel and restorePanelPosition
 
   // Initial parsing and update
   processTransactions();
@@ -36,13 +28,19 @@ async function init() {
     }
   });
 
-  // Start observing the table body for changes
-  const table = document.querySelector('table');
-  if (table) {
-    const tableBody = table.querySelector('tbody');
-    if (tableBody) {
-      observer.observe(tableBody, { childList: true });
-    }
+  // Identify the correct table container to observe
+  const tableContainer = document.querySelector('div[role="table"]') || document.querySelector('table');
+  if (tableContainer) {
+      // For div-tables, observe the container. For html tables, observe the tbody.
+      const targetNode = tableContainer.tagName.toLowerCase() === 'table' ? tableContainer.querySelector('tbody') : tableContainer;
+      if (targetNode) {
+          observer.observe(targetNode, { childList: true, subtree: true });
+          console.log("Show Me The Money: Observer started on table container.");
+      } else {
+          console.log("Show Me The Money: Could not find a suitable node to observe for table changes.");
+      }
+  } else {
+      console.log("Show Me The Money: No table container found to observe.");
   }
 }
 

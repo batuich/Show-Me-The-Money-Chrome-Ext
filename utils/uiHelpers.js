@@ -86,60 +86,52 @@ async function positionPanelInitially(panel) {
  * @returns {HTMLElement} The created panel element.
  */
 async function createPanel(themeName = 'dark') {
-  if (!themes[themeName]) {
-    console.error(`Show Me The Money: Theme "${themeName}" not found.`);
-    return null;
-  }
-  const theme = themes[themeName].panel.default;
-  const common = themes[themeName].common;
+    if (!themes[themeName]) {
+        console.error(`Show Me The Money: Theme "${themeName}" not found.`);
+        return null;
+    }
+    const theme = themes[themeName];
+    const common = theme.common;
 
-  const panel = document.createElement('div');
-  panel.id = 'show-me-the-money-panel';
-  // Position is set after appending to body
-  panel.style.backgroundColor = theme.bg;
-  panel.style.border = `1px solid ${theme.border}`;
-  panel.style.borderRadius = common.radius;
-  panel.style.padding = common.padding;
-  panel.style.color = theme.text;
-  panel.style.zIndex = '9999';
-  panel.style.display = 'flex';
-  panel.style.alignItems = 'center';
-  panel.style.gap = '10px';
-  panel.style.flexDirection = 'column'; // Allow vertical stacking
+    const panel = document.createElement('div');
+    panel.id = 'show-me-the-money-panel';
 
-  const mainRow = document.createElement('div');
-  mainRow.style.display = 'flex';
-  mainRow.style.alignItems = 'center';
-  mainRow.style.gap = '10px';
-  panel.appendChild(mainRow);
+    // Apply panel styles from theme
+    Object.assign(panel.style, {
+        backgroundColor: theme.panel.bg,
+        border: theme.panel.border,
+        borderRadius: common.radius,
+        padding: theme.panel.padding,
+        color: theme.panel.textColor,
+        fontFamily: common.fontFamily,
+        fontSize: common.fontSize,
+        display: 'flex',
+        alignItems: 'center',
+        gap: common.spacing,
+        zIndex: '9999',
+        height: '36px' // Set a fixed height to match the toolbar
+    });
 
-  // Drag Handle
-  const dragHandle = document.createElement('div');
-  dragHandle.style.cursor = 'move';
-  dragHandle.style.width = '20px';
-  dragHandle.style.height = '20px';
-  dragHandle.innerHTML = `<img src="${chrome.runtime.getURL('assets/icons/drag.svg')}" style="width:100%; height:100%;">`;
-  mainRow.appendChild(dragHandle);
+    const dragHandle = createDragHandle(theme);
+    const datePicker = createDatePicker(themeName);
+    const presetsContainer = createPresetButtons(theme);
+    const totalDisplay = createTotalDisplay(theme);
 
-  // Calendar
-  createCalendar(mainRow, themeName);
+    panel.appendChild(dragHandle);
+    panel.appendChild(datePicker);
+    panel.appendChild(presetsContainer);
+    panel.appendChild(totalDisplay);
 
-  // Total Display
-  const totalDisplay = document.createElement('div');
-  totalDisplay.id = 'smtm-total-display';
-  totalDisplay.innerText = 'Total: $0.00';
-  mainRow.appendChild(totalDisplay);
+    makeDraggable(panel, dragHandle);
 
-  makeDraggable(panel, dragHandle);
+    document.body.appendChild(panel);
 
-  document.body.appendChild(panel);
+    // Positioning logic remains the same
+    if (!restorePanelPosition(panel)) {
+        await positionPanelInitially(panel);
+    }
 
-  // After appending, attempt to restore position. If not found, set initial position.
-  if (!restorePanelPosition(panel)) {
-      await positionPanelInitially(panel);
-  }
-
-  return panel;
+    return panel;
 }
 
 /**
@@ -157,52 +149,220 @@ function restorePanelPosition(panel) {
   return false; // No saved position
 }
 
-/**
- * Creates a simplified calendar component.
- * @param {HTMLElement} parent The parent element to append the calendar to.
- * @param {string} themeName The name of the theme to use.
- */
-function createCalendar(parent, themeName) {
-  const container = document.createElement('div');
+function createDragHandle(theme) {
+    const handle = document.createElement('div');
+    handle.id = 'smtm-drag-handle';
+    Object.assign(handle.style, {
+        cursor: 'move',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100%',
+        padding: '0 8px',
+        opacity: '0.6'
+    });
 
-  const button = document.createElement('button');
-  button.innerText = 'Select Date Range';
-  container.appendChild(button);
+    const img = document.createElement('img');
+    img.src = chrome.runtime.getURL('assets/icons/drag.svg');
+    Object.assign(img.style, {
+        width: '10px',
+        height: '16px'
+    });
 
-  const calendarUI = document.createElement('div');
-  calendarUI.style.display = 'none'; // Initially hidden
-  calendarUI.style.marginTop = '10px';
+    handle.appendChild(img);
 
-  const startDateInput = document.createElement('input');
-  startDateInput.type = 'date';
-  calendarUI.appendChild(startDateInput);
+    handle.onmouseover = () => { handle.style.opacity = '1'; };
+    handle.onmouseout = () => { handle.style.opacity = '0.6'; };
 
-  const endDateInput = document.createElement('input');
-  endDateInput.type = 'date';
-  calendarUI.appendChild(endDateInput);
-
-  const applyButton = document.createElement('button');
-  applyButton.innerText = 'Apply';
-  applyButton.onclick = () => {
-    updateTotalDisplay(new Date(startDateInput.value), new Date(endDateInput.value));
-    calendarUI.style.display = 'none';
-  };
-  calendarUI.appendChild(applyButton);
-
-  const cancelButton = document.createElement('button');
-  cancelButton.innerText = 'Cancel';
-  cancelButton.onclick = () => {
-    calendarUI.style.display = 'none';
-  };
-  calendarUI.appendChild(cancelButton);
-
-  button.onclick = () => {
-    calendarUI.style.display = calendarUI.style.display === 'none' ? 'block' : 'none';
-  };
-
-  container.appendChild(calendarUI);
-  parent.appendChild(container);
+    return handle;
 }
+
+function createDatePicker(themeName) {
+    const theme = themes[themeName];
+    const container = document.createElement('div');
+    container.style.position = 'relative';
+
+    const displayButton = document.createElement('button');
+    const today = new Date();
+    const priorDate = new Date(new Date().setDate(today.getDate() - 30));
+
+    displayButton.innerHTML = `
+        <span id="smtm-date-range-display">${formatDateRange(priorDate, today)}</span> ▼
+    `;
+
+    Object.assign(displayButton.style, {
+        ...theme.button.default,
+        border: theme.datePicker.border,
+        padding: theme.datePicker.padding,
+        borderRadius: theme.common.radius,
+        fontFamily: theme.common.fontFamily,
+        fontSize: theme.common.fontSize,
+        cursor: 'pointer'
+    });
+
+    // Hover styles
+    displayButton.onmouseover = () => {
+        displayButton.style.backgroundColor = theme.datePicker.hover.bg;
+        displayButton.style.border = theme.datePicker.hover.border;
+    };
+    displayButton.onmouseout = () => {
+        displayButton.style.backgroundColor = theme.datePicker.bg;
+        displayButton.style.border = theme.datePicker.border;
+    };
+
+    const calendarTheme = theme.datePicker.calendar;
+    const calendarUI = document.createElement('div');
+    Object.assign(calendarUI.style, {
+        display: 'none',
+        position: 'absolute',
+        top: '120%',
+        left: '0',
+        backgroundColor: calendarTheme.bg,
+        border: calendarTheme.border,
+        borderRadius: theme.common.radius,
+        padding: '10px',
+        zIndex: '10000',
+        flexDirection: 'column',
+        gap: '8px'
+    });
+
+    const inputStyles = {
+        backgroundColor: calendarTheme.inputBg,
+        color: calendarTheme.inputText,
+        border: `1px solid ${theme.datePicker.border}`,
+        borderRadius: theme.common.radius,
+        padding: '5px'
+    };
+
+    const startDateInput = document.createElement('input');
+    startDateInput.type = 'date';
+    Object.assign(startDateInput.style, inputStyles);
+    calendarUI.appendChild(startDateInput);
+
+    const endDateInput = document.createElement('input');
+    endDateInput.type = 'date';
+    Object.assign(endDateInput.style, inputStyles);
+    calendarUI.appendChild(endDateInput);
+
+    const applyButton = document.createElement('button');
+    applyButton.innerText = 'Apply';
+    Object.assign(applyButton.style, {
+        ...theme.button.default,
+        backgroundColor: calendarTheme.applyButtonBg,
+        color: calendarTheme.applyButtonText,
+        border: 'none',
+        borderRadius: theme.common.radius,
+        padding: '5px 10px',
+        cursor: 'pointer'
+    });
+    applyButton.onclick = () => {
+        const startDate = new Date(startDateInput.value);
+        const endDate = new Date(endDateInput.value);
+        updateTotalDisplay(startDate, endDate);
+        updateDateRangeDisplay(startDate, endDate);
+        calendarUI.style.display = 'none';
+    };
+    calendarUI.appendChild(applyButton);
+
+    displayButton.onclick = () => {
+        calendarUI.style.display = calendarUI.style.display === 'none' ? 'flex' : 'none';
+    };
+
+    container.appendChild(displayButton);
+    container.appendChild(calendarUI);
+
+    return container;
+}
+
+function createPresetButtons(theme) {
+    const container = document.createElement('div');
+    container.id = 'smtm-presets-container';
+    container.style.display = 'flex';
+    container.style.gap = theme.common.spacing;
+
+    const presets = ['1d', '7d', '30d'];
+
+    presets.forEach(preset => {
+        const button = document.createElement('button');
+        button.innerText = preset;
+        button.dataset.preset = preset;
+        Object.assign(button.style, {
+            ...theme.button.default,
+            borderRadius: theme.common.radius,
+            fontFamily: theme.common.fontFamily,
+            fontSize: theme.common.fontSize,
+            cursor: 'pointer',
+            border: 'none'
+        });
+
+        button.onmouseover = () => {
+             if (!button.classList.contains('active')) button.style.backgroundColor = theme.button.hover.bg;
+        };
+        button.onmouseout = () => {
+            if (!button.classList.contains('active')) button.style.backgroundColor = theme.button.default.bg;
+        };
+
+        button.onclick = () => {
+            document.querySelectorAll('#smtm-presets-container button').forEach(btn => {
+                btn.classList.remove('active');
+                Object.assign(btn.style, theme.button.default);
+            });
+            button.classList.add('active');
+            Object.assign(button.style, theme.button.active);
+
+            const days = parseInt(preset.replace('d', ''));
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(endDate.getDate() - (days - 1));
+            updateTotalDisplay(startDate, endDate);
+            updateDateRangeDisplay(startDate, endDate);
+        };
+
+        container.appendChild(button);
+    });
+
+    // Set 30d as active by default
+    setTimeout(() => {
+        const defaultButton = container.querySelector('button[data-preset="30d"]');
+        if (defaultButton) {
+            defaultButton.click();
+        }
+    }, 0);
+
+
+    return container;
+}
+
+function formatDateRange(startDate, endDate) {
+    const options = { month: 'short', day: 'numeric' };
+    return `${startDate.toLocaleDateString('en-US', options)} - ${endDate.toLocaleDateString('en-US', options)}`;
+}
+
+function updateDateRangeDisplay(startDate, endDate) {
+    const displayElement = document.getElementById('smtm-date-range-display');
+    if (displayElement) {
+        displayElement.innerText = formatDateRange(startDate, endDate);
+    }
+}
+
+function createTotalDisplay(theme) {
+    const container = document.createElement('div');
+    container.id = 'smtm-total-display-container';
+    Object.assign(container.style, {
+        ...theme.totalDisplay,
+        borderRadius: theme.common.radius,
+        display: 'flex',
+        alignItems: 'center'
+    });
+
+    container.innerHTML = `
+        <span>Total: </span>
+        <strong id="smtm-total-value" style="font-weight: ${theme.totalDisplay.valueWeight}; margin-left: 5px;">$0.00</strong>
+    `;
+
+    return container;
+}
+
 
 /**
  * Makes an element draggable.
@@ -244,53 +404,86 @@ function makeDraggable(element, handle) {
  * @param {string} currencySymbol The currency symbol to use (e.g., '$').
  */
 function updateTotal(total, currencySymbol = '') {
-  const totalDisplay = document.getElementById('smtm-total-display');
-  if (totalDisplay) {
-    totalDisplay.innerText = `Total: ${currencySymbol}${total.toFixed(2)}`;
-  }
+    const totalValue = document.getElementById('smtm-total-value');
+    if (totalValue) {
+        totalValue.innerText = `${currencySymbol}${total.toFixed(2)}`;
+    }
 }
 
+
 /**
- * Shows a "missing data" label with a tooltip.
+ * Shows or hides the "missing data" label.
  * @param {string} themeName The name of the theme to use.
  * @param {Array<string>} missingDays An array of missing day strings.
  */
-function showMissingDataLabel(themeName, missingDays) {
-    if (!themes[themeName]) {
-    console.error(`Show Me The Money: Theme "${themeName}" not found.`);
-    return;
-  }
-  const theme = themes[themeName].labels.missingData;
-  const panel = document.getElementById('show-me-the-money-panel');
+function createTooltip(element, text, theme) {
+    const tooltip = document.createElement('div');
+    tooltip.className = 'smtm-tooltip';
+    tooltip.innerText = text;
 
-  let label = document.getElementById('smtm-missing-data-label');
-  if (!label) {
-    label = document.createElement('div');
-    label.id = 'smtm-missing-data-label';
-    label.style.color = theme.color;
-    label.style.fontSize = theme.fontSize;
-    label.innerText = theme.text;
-    label.style.position = 'relative'; // Needed for tooltip positioning
-    panel.appendChild(label);
-  }
+    Object.assign(tooltip.style, {
+        ...theme.tooltip.default,
+        position: 'absolute',
+        top: '125%',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        padding: '5px 8px',
+        borderRadius: theme.common.radius,
+        zIndex: '10001',
+        display: 'none',
+        width: 'max-content'
+    });
 
-  // Tooltip
-  const tooltipTheme = themes[themeName].tooltip.default;
-  const tooltip = document.createElement('div');
-  tooltip.innerText = `Missing data for: ${missingDays.join(', ')}`;
-  tooltip.style.position = 'absolute';
-  tooltip.style.visibility = 'hidden';
-  tooltip.style.backgroundColor = tooltipTheme.bg;
-  tooltip.style.color = tooltipTheme.text;
-  tooltip.style.padding = '5px';
-  tooltip.style.borderRadius = '4px';
-  tooltip.style.bottom = '125%'; // Position above the label
-  tooltip.style.left = '50%';
-  tooltip.style.transform = 'translateX(-50%)';
-  tooltip.style.whiteSpace = 'nowrap';
+    element.style.position = 'relative';
+    element.appendChild(tooltip);
 
-  label.onmouseover = () => { tooltip.style.visibility = 'visible'; };
-  label.onmouseout = () => { tooltip.style.visibility = 'hidden'; };
+    element.onmouseover = () => { tooltip.style.display = 'block'; };
+    element.onmouseout = () => { tooltip.style.display = 'none'; };
+}
 
-  label.appendChild(tooltip);
+function toggleMissingDataLabel(themeName, missingDays) {
+    let label = document.getElementById('smtm-missing-data-label');
+    const panel = document.getElementById('show-me-the-money-panel');
+
+    if (missingDays.length > 0) {
+        if (!themes[themeName]) {
+            console.error(`Show Me The Money: Theme "${themeName}" not found.`);
+            return;
+        }
+        const theme = themes[themeName];
+        const labelTheme = theme.labels.missingData;
+
+        if (!panel) return;
+
+        if (!label) {
+            label = document.createElement('div');
+            label.id = 'smtm-missing-data-label';
+            panel.appendChild(label);
+        }
+
+        Object.assign(label.style, {
+            position: 'absolute',
+            top: `${panel.offsetHeight + 5}px`,
+            left: '0',
+            width: '100%',
+            textAlign: 'center',
+            color: labelTheme.color,
+            fontSize: labelTheme.fontSize,
+            fontFamily: theme.common.fontFamily,
+            zIndex: '9998'
+        });
+
+        label.innerText = labelTheme.text;
+
+        // Remove old tooltip if it exists
+        const oldTooltip = label.querySelector('.smtm-tooltip');
+        if (oldTooltip) {
+            oldTooltip.remove();
+        }
+
+        createTooltip(label, `Missing data for: ${missingDays.join(', ')}`, theme);
+
+    } else if (label) {
+        label.remove();
+    }
 }

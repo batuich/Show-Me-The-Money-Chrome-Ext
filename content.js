@@ -80,17 +80,9 @@ function updateTotalDisplay(startDate, endDate) {
 
   updateTotal(total, currencySymbol);
 
+  const theme = window.location.hostname.includes('cursor.com') ? 'cursor' : 'dark';
   const missingDays = checkForMissingDays(history, startDate, endDate);
-  if (missingDays.length > 0) {
-    const theme = window.location.hostname.includes('cursor.com') ? 'cursor' : 'dark';
-    showMissingDataLabel(theme, missingDays);
-  } else {
-    // Hide or remove the label if it exists and there are no missing days
-    const label = document.getElementById('smtm-missing-data-label');
-    if (label) {
-      label.remove();
-    }
-  }
+  toggleMissingDataLabel(theme, missingDays);
 }
 
 // Ensure the script runs after the page has fully loaded

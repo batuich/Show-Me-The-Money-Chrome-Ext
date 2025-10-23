@@ -426,8 +426,18 @@ function makeDraggable(element, handle) {
     pos2 = pos4 - e.clientY;
     pos3 = e.clientX;
     pos4 = e.clientY;
-    element.style.top = (element.offsetTop - pos2) + "px";
-    element.style.left = (element.offsetLeft - pos1) + "px";
+
+    const newTop = element.offsetTop - pos2;
+    const newLeft = element.offsetLeft - pos1;
+
+    element.style.top = `${newTop}px`;
+    element.style.left = `${newLeft}px`;
+
+    const missingDataContainer = document.getElementById('smtm-missing-data-container');
+    if (missingDataContainer) {
+        missingDataContainer.style.top = `${newTop + element.offsetHeight + 6}px`;
+        missingDataContainer.style.left = `${newLeft}px`;
+    }
   }
 
   function closeDragElement() {
@@ -505,16 +515,18 @@ function toggleMissingDataLabel(themeName, missingDays) {
             document.body.appendChild(container);
         }
 
-        const panelRect = panel.getBoundingClientRect();
-        Object.assign(container.style, {
-            ...theme.missingDataContainer.default,
-            position: 'absolute',
-            top: `${panelRect.bottom + window.scrollY}px`,
-            left: `${panelRect.left + window.scrollX}px`,
-            width: `${panelRect.width}px`,
-            zIndex: '9998',
-            pointerEvents: 'none'
-        });
+        setTimeout(() => {
+            const panelRect = panel.getBoundingClientRect();
+            Object.assign(container.style, {
+                ...theme.missingDataContainer.default,
+                position: 'absolute',
+                top: `${panelRect.bottom + window.scrollY}px`,
+                left: `${panelRect.left + window.scrollX}px`,
+                width: `${panelRect.width}px`,
+                zIndex: '9998',
+                pointerEvents: 'none'
+            });
+        }, 0);
 
         let label = container.querySelector('#smtm-missing-data-label');
         if (!label) {

@@ -3,31 +3,31 @@
     "common": {
       "fontFamily": "'Inter', 'SF Pro Text', sans-serif",
       "fontSize": "13px",
-      "radius": "8px",
-      "spacing": "8px"
+      "radius": "6px",
+      "spacing": "4px"
     },
     "panel": {
-      "bg": "#1c1c1c",
-      "border": "1px solid #2a2a2a",
-      "textColor": "#e0e0e0",
+      "bg": "#17181C",
+      "border": "none",
+      "textColor": "#FFFFFF",
       "padding": "4px"
     },
     "dragHandle": {
-      "dotsColor": "#666",
-      "hoverColor": "#999"
+      "dotsColor": "#5D5D5D",
+      "hoverColor": "#1E1F23"
     },
     "button": {
       "default": {
         "bg": "transparent",
-        "text": "#e0e0e0",
-        "padding": "4px 8px"
+        "text": "#B5B5B6",
+        "padding": "5px 10px"
       },
       "hover": {
-        "bg": "#2b2b2b",
+        "bg": "#242628",
         "text": "#fff"
       },
       "active": {
-        "bg": "#333333",
+        "bg": "#242628",
         "text": "#fff"
       }
     },
@@ -50,10 +50,10 @@
       }
     },
     "totalDisplay": {
-      "bg": "#2b2b2b",
-      "text": "#e0e0e0",
-      "valueWeight": "700",
-      "padding": "4px 8px"
+      "bg": "#1E1F23",
+      "text": "#878787",
+      "valueWeight": "400",
+      "padding": "5px 10px"
     },
     "labels": {
       "missingData": {

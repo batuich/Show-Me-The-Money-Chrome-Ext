@@ -73,9 +73,25 @@
     },
     "labels": {
       "missingData": {
+        "text": "Not enough data for selected period",
         "color": "#ff5555",
         "fontSize": "12px",
         "fontFamily": "'Inter', 'SF Pro Text', sans-serif"
+      }
+    },
+    "missingDataContainer": {
+      "default": {
+        "bg": "transparent",
+        "marginTop": "6px",
+        "padding": "0"
+      }
+    },
+    "missingDataLabel": {
+      "default": {
+        "color": "#ff5555",
+        "fontSize": 12,
+        "fontWeight": 400,
+        "textAlign": "center"
       }
     },
     "tooltip": {

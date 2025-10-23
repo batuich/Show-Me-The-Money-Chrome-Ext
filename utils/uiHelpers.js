@@ -456,8 +456,13 @@ function updateTotal(total, currencySymbol = '') {
  * @param {Array<string>} missingDays An array of missing day strings.
  */
 function createTooltip(element, text, theme) {
-    const tooltip = document.createElement('div');
-    tooltip.className = 'smtm-tooltip';
+    let tooltip = element.querySelector('.smtm-tooltip');
+    if (!tooltip) {
+        tooltip = document.createElement('div');
+        tooltip.className = 'smtm-tooltip';
+        element.appendChild(tooltip);
+    }
+
     tooltip.innerText = text;
 
     Object.assign(tooltip.style, {
@@ -470,19 +475,22 @@ function createTooltip(element, text, theme) {
         borderRadius: theme.common.radius,
         zIndex: '10001',
         display: 'none',
-        width: 'max-content'
+        width: 'max-content',
+        pointerEvents: 'none'
     });
 
     element.style.position = 'relative';
-    element.appendChild(tooltip);
 
     element.onmouseover = () => { tooltip.style.display = 'block'; };
     element.onmouseout = () => { tooltip.style.display = 'none'; };
 }
 
+
 function toggleMissingDataLabel(themeName, missingDays) {
-    let label = document.getElementById('smtm-missing-data-label');
     const panel = document.getElementById('show-me-the-money-panel');
+    if (!panel) return;
+
+    let container = document.getElementById('smtm-missing-data-container');
 
     if (missingDays.length > 0) {
         if (!themes[themeName]) {
@@ -490,39 +498,41 @@ function toggleMissingDataLabel(themeName, missingDays) {
             return;
         }
         const theme = themes[themeName];
-        const labelTheme = theme.labels.missingData;
 
-        if (!panel) return;
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'smtm-missing-data-container';
+            document.body.appendChild(container);
+        }
 
+        const panelRect = panel.getBoundingClientRect();
+        Object.assign(container.style, {
+            ...theme.missingDataContainer.default,
+            position: 'absolute',
+            top: `${panelRect.bottom + window.scrollY}px`,
+            left: `${panelRect.left + window.scrollX}px`,
+            width: `${panelRect.width}px`,
+            zIndex: '9998',
+            pointerEvents: 'none'
+        });
+
+        let label = container.querySelector('#smtm-missing-data-label');
         if (!label) {
             label = document.createElement('div');
             label.id = 'smtm-missing-data-label';
-            panel.appendChild(label);
+            container.appendChild(label);
         }
 
         Object.assign(label.style, {
-            position: 'absolute',
-            top: `${panel.offsetHeight + 5}px`,
-            left: '0',
-            width: '100%',
-            textAlign: 'center',
-            color: labelTheme.color,
-            fontSize: labelTheme.fontSize,
-            fontFamily: theme.common.fontFamily,
-            zIndex: '9998'
+            ...theme.missingDataLabel.default,
+            pointerEvents: 'all'
         });
 
-        label.innerText = labelTheme.text;
-
-        // Remove old tooltip if it exists
-        const oldTooltip = label.querySelector('.smtm-tooltip');
-        if (oldTooltip) {
-            oldTooltip.remove();
-        }
+        label.innerText = theme.labels.missingData.text;
 
         createTooltip(label, `Missing data for: ${missingDays.join(', ')}`, theme);
 
-    } else if (label) {
-        label.remove();
+    } else if (container) {
+        container.remove();
     }
 }

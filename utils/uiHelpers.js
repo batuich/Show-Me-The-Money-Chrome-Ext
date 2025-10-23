@@ -152,30 +152,54 @@ function restorePanelPosition(panel) {
 function createDragHandle(theme) {
     const handle = document.createElement('div');
     handle.id = 'smtm-drag-handle';
+    const handleTheme = theme.dragHandle;
+
     Object.assign(handle.style, {
+        ...handleTheme.default,
         cursor: 'move',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         height: '100%',
         padding: '0 8px',
-        opacity: '0.6'
+        borderRadius: `${handleTheme.default.radius}px`
     });
 
-    const img = document.createElement('img');
-    img.src = chrome.runtime.getURL('assets/icons/drag.svg');
-    Object.assign(img.style, {
-        width: '10px',
-        height: '16px'
+    const dotsContainer = document.createElement('div');
+    Object.assign(dotsContainer.style, {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '3px'
     });
 
-    handle.appendChild(img);
+    for (let i = 0; i < 3; i++) {
+        const dot = document.createElement('div');
+        Object.assign(dot.style, {
+            width: '3px',
+            height: '3px',
+            borderRadius: '50%',
+            backgroundColor: handleTheme.default.dotColor
+        });
+        dotsContainer.appendChild(dot);
+    }
+    handle.appendChild(dotsContainer);
 
-    handle.onmouseover = () => { handle.style.opacity = '1'; };
-    handle.onmouseout = () => { handle.style.opacity = '0.6'; };
+    handle.onmouseover = () => {
+        handle.style.backgroundColor = handleTheme.hover.bg;
+        dotsContainer.childNodes.forEach(dot => {
+            dot.style.backgroundColor = handleTheme.hover.dotColor;
+        });
+    };
+    handle.onmouseout = () => {
+        handle.style.backgroundColor = handleTheme.default.bg;
+        dotsContainer.childNodes.forEach(dot => {
+            dot.style.backgroundColor = handleTheme.default.dotColor;
+        });
+    };
 
     return handle;
 }
+
 
 function createDatePicker(themeName) {
     const theme = themes[themeName];
@@ -187,17 +211,20 @@ function createDatePicker(themeName) {
     const priorDate = new Date(new Date().setDate(today.getDate() - 30));
 
     displayButton.innerHTML = `
-        <span id="smtm-date-range-display">${formatDateRange(priorDate, today)}</span> ▼
+        <span id="smtm-date-range-display" style="white-space: nowrap;">${formatDateRange(priorDate, today)}</span>&nbsp;▼
     `;
 
     Object.assign(displayButton.style, {
         ...theme.button.default,
         border: theme.datePicker.border,
-        padding: theme.datePicker.padding,
+        padding: '8px 10px',
         borderRadius: theme.common.radius,
         fontFamily: theme.common.fontFamily,
         fontSize: theme.common.fontSize,
-        cursor: 'pointer'
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        height: '100%'
     });
 
     // Hover styles
@@ -348,17 +375,29 @@ function updateDateRangeDisplay(startDate, endDate) {
 function createTotalDisplay(theme) {
     const container = document.createElement('div');
     container.id = 'smtm-total-display-container';
+    const totalBlockTheme = theme.totalBlock.default;
+
     Object.assign(container.style, {
-        ...theme.totalDisplay,
-        borderRadius: theme.common.radius,
+        backgroundColor: totalBlockTheme.bg,
+        borderRadius: `${totalBlockTheme.radius}px`,
+        padding: totalBlockTheme.padding,
         display: 'flex',
-        alignItems: 'center'
+        alignItems: 'center',
+        gap: '5px'
     });
 
-    container.innerHTML = `
-        <span>Total: </span>
-        <strong id="smtm-total-value" style="font-weight: ${theme.totalDisplay.valueWeight}; margin-left: 5px;">$0.00</strong>
-    `;
+    const label = document.createElement('span');
+    label.innerText = 'Total:';
+    label.style.color = totalBlockTheme.labelColor;
+
+    const value = document.createElement('strong');
+    value.id = 'smtm-total-value';
+    value.innerText = '$0.00';
+    value.style.color = totalBlockTheme.text;
+    value.style.fontWeight = 'bold';
+
+    container.appendChild(label);
+    container.appendChild(value);
 
     return container;
 }

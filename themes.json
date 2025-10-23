@@ -3,31 +3,38 @@
     "common": {
       "fontFamily": "'Inter', 'SF Pro Text', sans-serif",
       "fontSize": "13px",
-      "radius": "6px",
-      "spacing": "4px"
+      "radius": "8px",
+      "spacing": "8px"
     },
     "panel": {
-      "bg": "#17181C",
-      "border": "none",
-      "textColor": "#FFFFFF",
+      "bg": "#1c1c1c",
+      "border": "1px solid #2a2a2a",
+      "textColor": "#e0e0e0",
       "padding": "4px"
     },
     "dragHandle": {
-      "dotsColor": "#5D5D5D",
-      "hoverColor": "#1E1F23"
+      "default": {
+        "bg": "#1e1e1e",
+        "radius": 6,
+        "dotColor": "#666"
+      },
+      "hover": {
+        "bg": "#2a2a2a",
+        "dotColor": "#999"
+      }
     },
     "button": {
       "default": {
         "bg": "transparent",
-        "text": "#B5B5B6",
-        "padding": "5px 10px"
+        "text": "#e0e0e0",
+        "padding": "4px 8px"
       },
       "hover": {
-        "bg": "#242628",
+        "bg": "#2b2b2b",
         "text": "#fff"
       },
       "active": {
-        "bg": "#242628",
+        "bg": "#333333",
         "text": "#fff"
       }
     },
@@ -50,10 +57,19 @@
       }
     },
     "totalDisplay": {
-      "bg": "#1E1F23",
-      "text": "#878787",
-      "valueWeight": "400",
-      "padding": "5px 10px"
+      "bg": "#2b2b2b",
+      "text": "#e0e0e0",
+      "valueWeight": "700",
+      "padding": "4px 8px"
+    },
+    "totalBlock": {
+      "default": {
+        "bg": "#2a2a2a",
+        "text": "#fff",
+        "labelColor": "#ccc",
+        "radius": 6,
+        "padding": "4px 10px"
+      }
     },
     "labels": {
       "missingData": {

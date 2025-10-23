@@ -9,7 +9,7 @@ async function init() {
   const theme = window.location.hostname.includes('cursor.com') ? 'cursor' : 'dark';
 
   // Create the panel and insert it into the DOM
-  const panel = createPanel(theme);
+  const panel = await createPanel(theme);
 
   // The panel's position is handled by createPanel and restorePanelPosition
 

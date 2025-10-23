@@ -3,6 +3,40 @@
 let themes = {};
 
 /**
+ * Waits for an element to appear in the DOM.
+ * @param {string} selector The CSS selector of the element.
+ * @param {number} timeout The timeout in milliseconds.
+ * @returns {Promise<HTMLElement>} A promise that resolves with the element or rejects on timeout.
+ */
+function waitForElement(selector, timeout = 10000) {
+    return new Promise((resolve, reject) => {
+        const element = document.querySelector(selector);
+        if (element) {
+            resolve(element);
+            return;
+        }
+
+        const observer = new MutationObserver(mutations => {
+            const targetElement = document.querySelector(selector);
+            if (targetElement) {
+                observer.disconnect();
+                resolve(targetElement);
+            }
+        });
+
+        const timeoutId = setTimeout(() => {
+            observer.disconnect();
+            reject(new Error(`Show Me The Money: Timed out waiting for element: ${selector}`));
+        }, timeout);
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    });
+}
+
+/**
  * Fetches and stores themes from themes.json.
  * @returns {Promise<void>} A promise that resolves when themes are loaded.
  */
@@ -20,29 +54,30 @@ function loadThemes() {
  * Positions the panel initially next to the target element.
  * @param {HTMLElement} panel The panel element.
  */
-function positionPanelInitially(panel) {
-  const targetElement = document.querySelector('button[aria-label="User menu"]');
-  if (targetElement) {
-    const targetRect = targetElement.getBoundingClientRect();
-    panel.style.position = 'absolute'; // Use absolute positioning
+async function positionPanelInitially(panel) {
+    try {
+        const targetElement = await waitForElement('button[aria-label="User menu"]');
+        const targetRect = targetElement.getBoundingClientRect();
+        panel.style.position = 'absolute'; // Use absolute positioning
 
-    // Defer calculation to ensure panel has dimensions
-    setTimeout(() => {
-        const panelRect = panel.getBoundingClientRect();
-        const top = targetRect.top + (targetRect.height / 2) - (panelRect.height / 2) + window.scrollY;
-        const left = targetRect.left - panelRect.width - 10 + window.scrollX; // 10px margin
+        // Defer calculation to ensure panel has rendered and has dimensions
+        setTimeout(() => {
+            const panelRect = panel.getBoundingClientRect();
+            const top = targetRect.top + (targetRect.height / 2) - (panelRect.height / 2) + window.scrollY;
+            const left = targetRect.left - panelRect.width - 10 + window.scrollX; // 10px margin
 
-        panel.style.top = `${top}px`;
-        panel.style.left = `${left}px`;
+            panel.style.top = `${top}px`;
+            panel.style.left = `${left}px`;
 
+            savePanelPosition({ top: panel.style.top, left: panel.style.left });
+        }, 0);
+    } catch (error) {
+        console.warn(`Show Me The Money: ${error.message}. Using fallback positioning.`);
+        panel.style.position = 'fixed';
+        panel.style.top = '20px';
+        panel.style.left = '20px';
         savePanelPosition({ top: panel.style.top, left: panel.style.left });
-    }, 0);
-  } else {
-    console.warn('Show Me The Money: Target element for initial positioning not found. Using fallback.');
-    panel.style.position = 'fixed';
-    panel.style.top = '20px';
-    panel.style.left = '20px';
-  }
+    }
 }
 
 /**
@@ -50,7 +85,7 @@ function positionPanelInitially(panel) {
  * @param {string} themeName The name of the theme to use.
  * @returns {HTMLElement} The created panel element.
  */
-function createPanel(themeName = 'dark') {
+async function createPanel(themeName = 'dark') {
   if (!themes[themeName]) {
     console.error(`Show Me The Money: Theme "${themeName}" not found.`);
     return null;
@@ -101,7 +136,7 @@ function createPanel(themeName = 'dark') {
 
   // After appending, attempt to restore position. If not found, set initial position.
   if (!restorePanelPosition(panel)) {
-      positionPanelInitially(panel);
+      await positionPanelInitially(panel);
   }
 
   return panel;

@@ -49,6 +49,45 @@ function loadThemes() {
     .catch(error => console.error('Show Me The Money: Error loading themes:', error));
 }
 
+function applyThemeStyles(el, theme, themeKey, state = "default") {
+    const style = theme[themeKey]?.[state];
+    if (!style || !el) return;
+
+    for (const [prop, value] of Object.entries(style)) {
+        switch (prop) {
+            case "bg":
+                el.style.backgroundColor = value;
+                break;
+            case "text":
+                el.style.color = value;
+                break;
+            case "radius":
+                el.style.borderRadius = `${value}px`;
+                break;
+            case "padding":
+                el.style.padding = value;
+                break;
+            case "fontSize":
+                el.style.fontSize = `${value}px`;
+                break;
+            case "fontWeight":
+                el.style.fontWeight = value;
+                break;
+            case "margin":
+                el.style.margin = value;
+                break;
+            case "width":
+                el.style.width = value;
+                break;
+            case "maxWidth":
+                el.style.maxWidth = value;
+                break;
+            default:
+                el.style[prop] = value;
+        }
+    }
+}
+
 
 /**
  * Positions the panel initially next to the target element.
@@ -86,34 +125,25 @@ async function positionPanelInitially(panel) {
  * @returns {HTMLElement} The created panel element.
  */
 async function createPanel(themeName = 'dark') {
-    if (!themes[themeName]) {
+    const theme = themes[themeName];
+    if (!theme) {
         console.error(`Show Me The Money: Theme "${themeName}" not found.`);
         return null;
     }
-    const theme = themes[themeName];
-    const common = theme.common;
 
     const panel = document.createElement('div');
     panel.id = 'show-me-the-money-panel';
-
-    // Apply panel styles from theme
+    applyThemeStyles(panel, theme, 'panel');
     Object.assign(panel.style, {
-        backgroundColor: theme.panel.bg,
-        border: theme.panel.border,
-        borderRadius: common.radius,
-        padding: theme.panel.padding,
-        color: theme.panel.textColor,
-        fontFamily: common.fontFamily,
-        fontSize: common.fontSize,
         display: 'flex',
         alignItems: 'center',
-        gap: common.spacing,
+        gap: theme.common.spacing,
         zIndex: '9999',
-        height: '36px' // Set a fixed height to match the toolbar
+        height: '36px'
     });
 
     const dragHandle = createDragHandle(theme);
-    const datePicker = createDatePicker(themeName);
+    const datePicker = createDatePicker(theme);
     const presetsContainer = createPresetButtons(theme);
     const totalDisplay = createTotalDisplay(theme);
 
@@ -152,57 +182,40 @@ function restorePanelPosition(panel) {
 function createDragHandle(theme) {
     const handle = document.createElement('div');
     handle.id = 'smtm-drag-handle';
-    const handleTheme = theme.dragHandle;
-
+    applyThemeStyles(handle, theme, 'dragHandle');
     Object.assign(handle.style, {
-        ...handleTheme.default,
         cursor: 'move',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         height: '100%',
-        padding: '0 8px',
-        borderRadius: `${handleTheme.default.radius}px`
+        padding: '0 8px'
     });
 
     const dotsContainer = document.createElement('div');
-    Object.assign(dotsContainer.style, {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '3px'
-    });
+    dotsContainer.style.display = 'flex';
+    dotsContainer.style.flexDirection = 'column';
+    dotsContainer.style.gap = '3px';
 
     for (let i = 0; i < 3; i++) {
         const dot = document.createElement('div');
+        applyThemeStyles(dot, theme, 'dragHandle', 'default');
         Object.assign(dot.style, {
             width: '3px',
             height: '3px',
-            borderRadius: '50%',
-            backgroundColor: handleTheme.default.dotColor
+            borderRadius: '50%'
         });
         dotsContainer.appendChild(dot);
     }
     handle.appendChild(dotsContainer);
 
-    handle.onmouseover = () => {
-        handle.style.backgroundColor = handleTheme.hover.bg;
-        dotsContainer.childNodes.forEach(dot => {
-            dot.style.backgroundColor = handleTheme.hover.dotColor;
-        });
-    };
-    handle.onmouseout = () => {
-        handle.style.backgroundColor = handleTheme.default.bg;
-        dotsContainer.childNodes.forEach(dot => {
-            dot.style.backgroundColor = handleTheme.default.dotColor;
-        });
-    };
+    handle.onmouseover = () => applyThemeStyles(handle, theme, 'dragHandle', 'hover');
+    handle.onmouseout = () => applyThemeStyles(handle, theme, 'dragHandle', 'default');
 
     return handle;
 }
 
-
-function createDatePicker(themeName) {
-    const theme = themes[themeName];
+function createDatePicker(theme) {
     const container = document.createElement('div');
     container.style.position = 'relative';
 
@@ -214,74 +227,42 @@ function createDatePicker(themeName) {
         <span id="smtm-date-range-display" style="white-space: nowrap;">${formatDateRange(priorDate, today)}</span>&nbsp;▼
     `;
 
+    applyThemeStyles(displayButton, theme, 'datePicker');
     Object.assign(displayButton.style, {
-        ...theme.button.default,
-        border: theme.datePicker.border,
-        padding: '8px 10px',
-        borderRadius: theme.common.radius,
-        fontFamily: theme.common.fontFamily,
-        fontSize: theme.common.fontSize,
         cursor: 'pointer',
         display: 'flex',
         alignItems: 'center',
         height: '100%'
     });
 
-    // Hover styles
-    displayButton.onmouseover = () => {
-        displayButton.style.backgroundColor = theme.datePicker.hover.bg;
-        displayButton.style.border = theme.datePicker.hover.border;
-    };
-    displayButton.onmouseout = () => {
-        displayButton.style.backgroundColor = theme.datePicker.bg;
-        displayButton.style.border = theme.datePicker.border;
-    };
+    displayButton.onmouseover = () => applyThemeStyles(displayButton, theme, 'datePicker', 'hover');
+    displayButton.onmouseout = () => applyThemeStyles(displayButton, theme, 'datePicker', 'default');
 
-    const calendarTheme = theme.datePicker.calendar;
     const calendarUI = document.createElement('div');
+    applyThemeStyles(calendarUI, theme, 'datePicker', 'calendar');
     Object.assign(calendarUI.style, {
         display: 'none',
         position: 'absolute',
         top: '120%',
         left: '0',
-        backgroundColor: calendarTheme.bg,
-        border: calendarTheme.border,
-        borderRadius: theme.common.radius,
-        padding: '10px',
         zIndex: '10000',
         flexDirection: 'column',
         gap: '8px'
     });
 
-    const inputStyles = {
-        backgroundColor: calendarTheme.inputBg,
-        color: calendarTheme.inputText,
-        border: `1px solid ${theme.datePicker.border}`,
-        borderRadius: theme.common.radius,
-        padding: '5px'
-    };
-
     const startDateInput = document.createElement('input');
     startDateInput.type = 'date';
-    Object.assign(startDateInput.style, inputStyles);
-    calendarUI.appendChild(startDateInput);
+    applyThemeStyles(startDateInput, theme, 'datePicker', 'calendar');
 
     const endDateInput = document.createElement('input');
     endDateInput.type = 'date';
-    Object.assign(endDateInput.style, inputStyles);
-    calendarUI.appendChild(endDateInput);
+    applyThemeStyles(endDateInput, theme, 'datePicker', 'calendar');
 
     const applyButton = document.createElement('button');
     applyButton.innerText = 'Apply';
-    Object.assign(applyButton.style, {
-        ...theme.button.default,
-        backgroundColor: calendarTheme.applyButtonBg,
-        color: calendarTheme.applyButtonText,
-        border: 'none',
-        borderRadius: theme.common.radius,
-        padding: '5px 10px',
-        cursor: 'pointer'
-    });
+    applyThemeStyles(applyButton, theme, 'button');
+    applyButton.style.cursor = 'pointer';
+
     applyButton.onclick = () => {
         const startDate = new Date(startDateInput.value);
         const endDate = new Date(endDateInput.value);
@@ -289,14 +270,13 @@ function createDatePicker(themeName) {
         updateDateRangeDisplay(startDate, endDate);
         calendarUI.style.display = 'none';
     };
-    calendarUI.appendChild(applyButton);
 
     displayButton.onclick = () => {
         calendarUI.style.display = calendarUI.style.display === 'none' ? 'flex' : 'none';
     };
 
-    container.appendChild(displayButton);
-    container.appendChild(calendarUI);
+    calendarUI.append(startDateInput, endDateInput, applyButton);
+    container.append(displayButton, calendarUI);
 
     return container;
 }
@@ -304,8 +284,10 @@ function createDatePicker(themeName) {
 function createPresetButtons(theme) {
     const container = document.createElement('div');
     container.id = 'smtm-presets-container';
-    container.style.display = 'flex';
-    container.style.gap = theme.common.spacing;
+    Object.assign(container.style, {
+        display: 'flex',
+        gap: theme.common.spacing
+    });
 
     const presets = ['1d', '7d', '30d'];
 
@@ -313,29 +295,24 @@ function createPresetButtons(theme) {
         const button = document.createElement('button');
         button.innerText = preset;
         button.dataset.preset = preset;
-        Object.assign(button.style, {
-            ...theme.button.default,
-            borderRadius: theme.common.radius,
-            fontFamily: theme.common.fontFamily,
-            fontSize: theme.common.fontSize,
-            cursor: 'pointer',
-            border: 'none'
-        });
+        applyThemeStyles(button, theme, 'button');
+        button.style.cursor = 'pointer';
+        button.style.border = 'none';
 
         button.onmouseover = () => {
-             if (!button.classList.contains('active')) button.style.backgroundColor = theme.button.hover.bg;
+             if (!button.classList.contains('active')) applyThemeStyles(button, theme, 'button', 'hover');
         };
         button.onmouseout = () => {
-            if (!button.classList.contains('active')) button.style.backgroundColor = theme.button.default.bg;
+            if (!button.classList.contains('active')) applyThemeStyles(button, theme, 'button', 'default');
         };
 
         button.onclick = () => {
             document.querySelectorAll('#smtm-presets-container button').forEach(btn => {
                 btn.classList.remove('active');
-                Object.assign(btn.style, theme.button.default);
+                applyThemeStyles(btn, theme, 'button', 'default');
             });
             button.classList.add('active');
-            Object.assign(button.style, theme.button.active);
+            applyThemeStyles(button, theme, 'button', 'active');
 
             const days = parseInt(preset.replace('d', ''));
             const endDate = new Date();
@@ -348,14 +325,10 @@ function createPresetButtons(theme) {
         container.appendChild(button);
     });
 
-    // Set 30d as active by default
     setTimeout(() => {
         const defaultButton = container.querySelector('button[data-preset="30d"]');
-        if (defaultButton) {
-            defaultButton.click();
-        }
+        if (defaultButton) defaultButton.click();
     }, 0);
-
 
     return container;
 }
@@ -375,12 +348,8 @@ function updateDateRangeDisplay(startDate, endDate) {
 function createTotalDisplay(theme) {
     const container = document.createElement('div');
     container.id = 'smtm-total-display-container';
-    const totalBlockTheme = theme.totalBlock.default;
-
+    applyThemeStyles(container, theme, 'totalBlock');
     Object.assign(container.style, {
-        backgroundColor: totalBlockTheme.bg,
-        borderRadius: `${totalBlockTheme.radius}px`,
-        padding: totalBlockTheme.padding,
         display: 'flex',
         alignItems: 'center',
         gap: '5px'
@@ -388,12 +357,12 @@ function createTotalDisplay(theme) {
 
     const label = document.createElement('span');
     label.innerText = 'Total:';
-    label.style.color = totalBlockTheme.labelColor;
+    applyThemeStyles(label, theme, 'totalBlock', 'default');
 
     const value = document.createElement('strong');
     value.id = 'smtm-total-value';
     value.innerText = '$0.00';
-    value.style.color = totalBlockTheme.text;
+    applyThemeStyles(value, theme, 'totalBlock', 'default');
     value.style.fontWeight = 'bold';
 
     container.appendChild(label);
@@ -475,17 +444,20 @@ function createTooltip(element, text, theme) {
 
     tooltip.innerText = text;
 
+    applyThemeStyles(tooltip, theme, 'tooltip');
+    const panel = document.getElementById('show-me-the-money-panel');
+    const panelWidth = panel ? panel.offsetWidth : 200;
+
     Object.assign(tooltip.style, {
-        ...theme.tooltip.default,
         position: 'absolute',
         top: '125%',
         left: '50%',
         transform: 'translateX(-50%)',
-        padding: '5px 8px',
-        borderRadius: theme.common.radius,
         zIndex: '10001',
         display: 'none',
-        width: 'max-content',
+        maxWidth: `${panelWidth}px`,
+        wordWrap: 'break-word',
+        textAlign: 'center',
         pointerEvents: 'none'
     });
 
@@ -501,13 +473,13 @@ function toggleMissingDataLabel(themeName, missingDays) {
     if (!panel) return;
 
     let container = document.getElementById('smtm-missing-data-container');
+    const theme = themes[themeName];
 
     if (missingDays.length > 0) {
-        if (!themes[themeName]) {
+        if (!theme) {
             console.error(`Show Me The Money: Theme "${themeName}" not found.`);
             return;
         }
-        const theme = themes[themeName];
 
         if (!container) {
             container = document.createElement('div');
@@ -517,8 +489,8 @@ function toggleMissingDataLabel(themeName, missingDays) {
 
         setTimeout(() => {
             const panelRect = panel.getBoundingClientRect();
+            applyThemeStyles(container, theme, 'missingDataContainer');
             Object.assign(container.style, {
-                ...theme.missingDataContainer.default,
                 position: 'absolute',
                 top: `${panelRect.bottom + window.scrollY}px`,
                 left: `${panelRect.left + window.scrollX}px`,
@@ -535,11 +507,8 @@ function toggleMissingDataLabel(themeName, missingDays) {
             container.appendChild(label);
         }
 
-        Object.assign(label.style, {
-            ...theme.missingDataLabel.default,
-            pointerEvents: 'all'
-        });
-
+        applyThemeStyles(label, theme, 'missingDataLabel');
+        label.style.pointerEvents = 'all';
         label.innerText = theme.labels.missingData.text;
 
         createTooltip(label, `Missing data for: ${missingDays.join(', ')}`, theme);

@@ -54,39 +54,34 @@ function applyThemeStyles(el, theme, themeKey, state = "default") {
     if (!style || !el) return;
 
     for (const [prop, value] of Object.entries(style)) {
+        let cssProp = prop.replace(/[A-Z]/g, m => "-" + m.toLowerCase());
+        let finalValue = value;
+
         switch (prop) {
             case "bg":
-                el.style.backgroundColor = value;
+                cssProp = "background-color";
                 break;
             case "text":
-                el.style.color = value;
+                cssProp = "color";
+                break;
+            case "dotColor":
+                cssProp = "background-color";
+                break;
+            case "labelColor":
+                cssProp = "color";
                 break;
             case "radius":
-                el.style.borderRadius = `${value}px`;
-                break;
-            case "padding":
-                el.style.padding = value;
+                cssProp = "border-radius";
+                finalValue = `${value}px`;
                 break;
             case "fontSize":
-                el.style.fontSize = `${value}px`;
+                cssProp = "font-size";
+                finalValue = `${value}px`;
                 break;
-            case "fontWeight":
-                el.style.fontWeight = value;
-                break;
-            case "margin":
-                el.style.margin = value;
-                break;
-            case "width":
-                el.style.width = value;
-                break;
-            case "maxWidth":
-                el.style.maxWidth = value;
-                break;
-            case "fontFamily":
-                el.style.fontFamily = value;
-                break;
-            default:
-                el.style[prop] = value;
+        }
+
+        if (typeof value !== "object") {
+            el.style.setProperty(cssProp, finalValue, "important");
         }
     }
 }
@@ -138,10 +133,6 @@ async function createPanel(themeName = 'dark') {
     panel.id = 'show-me-the-money-panel';
     applyThemeStyles(panel, theme, 'base');
     applyThemeStyles(panel, theme, 'panel');
-
-    const fontFamily = theme.base.default.fontFamily;
-    panel.style.fontFamily = fontFamily;
-    panel.style.setProperty("font-family", fontFamily, "important");
 
     Object.assign(panel.style, {
         display: 'flex',
@@ -211,8 +202,7 @@ function createDragHandle(theme) {
         applyThemeStyles(dot, theme, 'dragHandle', 'default');
         Object.assign(dot.style, {
             width: '3px',
-            height: '3px',
-            borderRadius: '50%'
+            height: '3px'
         });
         dotsContainer.appendChild(dot);
     }
@@ -372,7 +362,6 @@ function createTotalDisplay(theme) {
     value.id = 'smtm-total-value';
     value.innerText = '$0.00';
     applyThemeStyles(value, theme, 'totalBlock', 'default');
-    value.style.fontWeight = 'bold';
 
     container.appendChild(label);
     container.appendChild(value);

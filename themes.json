@@ -1,92 +1,113 @@
 {
   "cursor": {
     "base": {
-        "default": {
-            "fontFamily": "'Inter', 'SF Pro Text', sans-serif"
-        }
+      "default": {
+        "fontFamily": "'Inter', 'SF Pro Text', sans-serif"
+      }
     },
     "common": {
-      "fontSize": "13px",
-      "radius": "8px",
-      "spacing": "8px"
+        "spacing": "8px"
+    },
+    "labels": {
+        "missingData": {
+            "text": "Not enough data for selected period"
+        }
     },
     "panel": {
-      "bg": "#1c1c1c",
-      "border": "1px solid #2a2a2a",
-      "textColor": "#e0e0e0",
-      "padding": "4px"
+      "default": {
+        "backgroundColor": "#1c1c1c",
+        "border": "1px solid #2a2a2a",
+        "color": "#e0e0e0",
+        "padding": "4px",
+        "borderRadius": 8,
+        "fontSize": 13
+      }
     },
     "dragHandle": {
       "default": {
-        "bg": "#1e1e1e",
-        "radius": 6,
-        "dotColor": "#666"
+        "backgroundColor": "#1e1e1e",
+        "borderRadius": 6
       },
       "hover": {
-        "bg": "#2a2a2a",
-        "dotColor": "#999"
+        "backgroundColor": "#2a2a2a"
       }
+    },
+    "dragHandleDot": {
+        "default": {
+            "backgroundColor": "#666"
+        },
+        "hover": {
+            "backgroundColor": "#999"
+        }
     },
     "button": {
       "default": {
-        "bg": "transparent",
-        "text": "#e0e0e0",
-        "padding": "4px 8px"
+        "backgroundColor": "transparent",
+        "color": "#e0e0e0",
+        "padding": "4px 8px",
+        "borderRadius": 6
       },
       "hover": {
-        "bg": "#2b2b2b",
-        "text": "#fff"
+        "backgroundColor": "#2b2b2b",
+        "color": "#fff"
       },
       "active": {
-        "bg": "#333333",
-        "text": "#fff"
+        "backgroundColor": "#333333",
+        "color": "#fff"
       }
     },
     "datePicker": {
-      "bg": "transparent",
-      "border": "1px solid #3a3a3a",
-      "text": "#e0e0e0",
-      "padding": "4px 8px",
-      "hover": {
-        "bg": "#2b2b2b",
-        "border": "1px solid #4a4a4a"
+      "default": {
+        "backgroundColor": "transparent",
+        "border": "1px solid #3a3a3a",
+        "color": "#e0e0e0",
+        "padding": "8px 10px",
+        "borderRadius": 6
       },
-      "calendar": {
-        "bg": "#1c1c1c",
-        "border": "1px solid #2a2a2a",
-        "inputBg": "#2b2b2b",
-        "inputText": "#e0e0e0",
-        "applyButtonBg": "#333",
-        "applyButtonText": "#fff"
+      "hover": {
+        "backgroundColor": "#2b2b2b",
+        "border": "1px solid #4a4a4a"
       }
     },
-    "totalDisplay": {
-      "bg": "#2b2b2b",
-      "text": "#e0e0e0",
-      "valueWeight": "700",
-      "padding": "4px 8px"
+    "calendar": {
+        "default": {
+            "backgroundColor": "#1c1c1c",
+            "border": "1px solid #2a2a2a",
+            "borderRadius": 6,
+            "padding": "10px"
+        }
+    },
+    "calendarInput": {
+        "default": {
+             "backgroundColor": "#2b2b2b",
+             "color": "#e0e0e0",
+             "border": "1px solid #3a3a3a",
+             "borderRadius": 4,
+             "padding": "5px"
+        }
     },
     "totalBlock": {
       "default": {
-        "bg": "#2a2a2a",
-        "text": "#fff",
-        "labelColor": "#ccc",
-        "radius": 6,
+        "backgroundColor": "#2a2a2a",
+        "borderRadius": 6,
         "padding": "4px 10px"
       }
     },
-    "labels": {
-      "missingData": {
-        "text": "Not enough data for selected period",
-        "color": "#ff5555",
-        "fontSize": "12px"
-      }
+    "totalLabel": {
+        "default": {
+            "color": "#ccc",
+            "fontWeight": 400
+        }
+    },
+    "totalValue": {
+        "default": {
+            "color": "#fff",
+            "fontWeight": 700
+        }
     },
     "missingDataContainer": {
       "default": {
-        "bg": "transparent",
-        "marginTop": "6px",
-        "padding": "0"
+        "marginTop": "6px"
       }
     },
     "missingDataLabel": {
@@ -99,83 +120,11 @@
     },
     "tooltip": {
       "default": {
-        "bg": "#333",
-        "text": "#fff",
-        "fontSize": "12px"
-      }
-    }
-  },
-  "dark": {
-    "common": {
-      "radius": "8px",
-      "padding": "6px"
-    },
-    "button": {
-      "default": {
-        "bg": "#333",
-        "text": "#fff"
-      },
-      "hover": {
-        "bg": "#444"
-      }
-    },
-    "panel": {
-      "default": {
-        "bg": "#222",
-        "border": "#333",
-        "text": "#fff"
-      }
-    },
-    "tooltip": {
-      "default": {
-        "bg": "#ff3333",
-        "text": "#fff",
-        "fontSize": "12px"
-      }
-    },
-    "labels": {
-      "missingData": {
-        "text": "Not enough data for selected period",
-        "color": "#ff5555",
-        "fontSize": "12px",
-        "position": "belowTotal"
-      }
-    }
-  },
-  "light": {
-    "common": {
-      "radius": "8px",
-      "padding": "6px"
-    },
-    "button": {
-      "default": {
-        "bg": "#eee",
-        "text": "#000"
-      },
-      "hover": {
-        "bg": "#ddd"
-      }
-    },
-    "panel": {
-      "default": {
-        "bg": "#fff",
-        "border": "#ccc",
-        "text": "#000"
-      }
-    },
-    "tooltip": {
-      "default": {
-        "bg": "#ff3333",
-        "text": "#fff",
-        "fontSize": "12px"
-      }
-    },
-    "labels": {
-      "missingData": {
-        "text": "Not enough data for selected period",
-        "color": "#ff0000",
-        "fontSize": "12px",
-        "position": "belowTotal"
+        "backgroundColor": "#333",
+        "color": "#fff",
+        "fontSize": 12,
+        "padding": "8px 10px",
+        "borderRadius": 6
       }
     }
   }

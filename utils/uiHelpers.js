@@ -78,39 +78,17 @@ function applyThemeStyles(el, theme, themeKey, state = "default") {
     if (!style || !el) return;
 
     for (const [prop, value] of Object.entries(style)) {
-        let cssProp = prop.replace(/[A-Z]/g, m => "-" + m.toLowerCase());
+        if (value === null || value === undefined) continue;
+
+        const cssProp = prop.replace(/[A-Z]/g, m => `-${m.toLowerCase()}`);
         let finalValue = value;
 
-        switch (prop) {
-            case "bg":
-                cssProp = "background-color";
-                break;
-            case "text":
-                cssProp = "color";
-                break;
-            case "dotColor":
-                cssProp = "background-color";
-                break;
-            case "labelColor":
-                cssProp = "color";
-                break;
-            case "radius":
-                cssProp = "border-radius";
-                if (typeof value === 'number') {
-                    finalValue = `${value}px`;
-                }
-                break;
-            case "fontSize":
-                cssProp = "font-size";
-                if (typeof value === 'number') {
-                    finalValue = `${value}px`;
-                }
-                break;
+        const pixelProps = ['borderRadius', 'fontSize', 'height', 'width', 'top', 'left', 'right', 'bottom', 'padding', 'margin'];
+        if (pixelProps.includes(prop) && typeof value === 'number') {
+            finalValue = `${value}px`;
         }
 
-        if (typeof value !== "object") {
-            el.style.setProperty(cssProp, finalValue, "important");
-        }
+        el.style.setProperty(cssProp, finalValue, 'important');
     }
     if (DEBUG_STYLES) logComputedStyles(el, themeKey || el.tagName);
 }
@@ -230,7 +208,7 @@ function createDragHandle(theme) {
 
     for (let i = 0; i < 3; i++) {
         const dot = document.createElement('div');
-        applyThemeStyles(dot, theme, 'dragHandle', 'default');
+        applyThemeStyles(dot, theme, 'dragHandleDot', 'default');
         Object.assign(dot.style, {
             width: '3px',
             height: '3px'
@@ -239,8 +217,14 @@ function createDragHandle(theme) {
     }
     handle.appendChild(dotsContainer);
 
-    handle.onmouseover = () => applyThemeStyles(handle, theme, 'dragHandle', 'hover');
-    handle.onmouseout = () => applyThemeStyles(handle, theme, 'dragHandle', 'default');
+    handle.onmouseover = () => {
+        applyThemeStyles(handle, theme, 'dragHandle', 'hover');
+        dotsContainer.childNodes.forEach(dot => applyThemeStyles(dot, theme, 'dragHandleDot', 'hover'));
+    };
+    handle.onmouseout = () => {
+        applyThemeStyles(handle, theme, 'dragHandle', 'default');
+        dotsContainer.childNodes.forEach(dot => applyThemeStyles(dot, theme, 'dragHandleDot', 'default'));
+    };
 
     return handle;
 }
@@ -269,7 +253,7 @@ function createDatePicker(theme) {
     displayButton.onmouseout = () => applyThemeStyles(displayButton, theme, 'datePicker', 'default');
 
     const calendarUI = document.createElement('div');
-    applyThemeStyles(calendarUI, theme, 'datePicker', 'calendar');
+    applyThemeStyles(calendarUI, theme, 'calendar');
     Object.assign(calendarUI.style, {
         display: 'none',
         position: 'absolute',
@@ -282,11 +266,11 @@ function createDatePicker(theme) {
 
     const startDateInput = document.createElement('input');
     startDateInput.type = 'date';
-    applyThemeStyles(startDateInput, theme, 'datePicker', 'calendar');
+    applyThemeStyles(startDateInput, theme, 'calendarInput');
 
     const endDateInput = document.createElement('input');
     endDateInput.type = 'date';
-    applyThemeStyles(endDateInput, theme, 'datePicker', 'calendar');
+    applyThemeStyles(endDateInput, theme, 'calendarInput');
 
     const applyButton = document.createElement('button');
     applyButton.innerText = 'Apply';
@@ -387,12 +371,12 @@ function createTotalDisplay(theme) {
 
     const label = document.createElement('span');
     label.innerText = 'Total:';
-    applyThemeStyles(label, theme, 'totalBlock', 'default');
+    applyThemeStyles(label, theme, 'totalLabel');
 
     const value = document.createElement('strong');
     value.id = 'smtm-total-value';
     value.innerText = '$0.00';
-    applyThemeStyles(value, theme, 'totalBlock', 'default');
+    applyThemeStyles(value, theme, 'totalValue');
 
     container.appendChild(label);
     container.appendChild(value);

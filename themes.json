@@ -1,7 +1,11 @@
 {
   "cursor": {
+    "base": {
+        "default": {
+            "fontFamily": "'Inter', 'SF Pro Text', sans-serif"
+        }
+    },
     "common": {
-      "fontFamily": "'Inter', 'SF Pro Text', sans-serif",
       "fontSize": "13px",
       "radius": "8px",
       "spacing": "8px"
@@ -75,8 +79,7 @@
       "missingData": {
         "text": "Not enough data for selected period",
         "color": "#ff5555",
-        "fontSize": "12px",
-        "fontFamily": "'Inter', 'SF Pro Text', sans-serif"
+        "fontSize": "12px"
       }
     },
     "missingDataContainer": {

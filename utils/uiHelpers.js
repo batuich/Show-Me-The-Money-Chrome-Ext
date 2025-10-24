@@ -82,6 +82,9 @@ function applyThemeStyles(el, theme, themeKey, state = "default") {
             case "maxWidth":
                 el.style.maxWidth = value;
                 break;
+            case "fontFamily":
+                el.style.fontFamily = value;
+                break;
             default:
                 el.style[prop] = value;
         }
@@ -133,7 +136,13 @@ async function createPanel(themeName = 'dark') {
 
     const panel = document.createElement('div');
     panel.id = 'show-me-the-money-panel';
+    applyThemeStyles(panel, theme, 'base');
     applyThemeStyles(panel, theme, 'panel');
+
+    const fontFamily = theme.base.default.fontFamily;
+    panel.style.fontFamily = fontFamily;
+    panel.style.setProperty("font-family", fontFamily, "important");
+
     Object.assign(panel.style, {
         display: 'flex',
         alignItems: 'center',

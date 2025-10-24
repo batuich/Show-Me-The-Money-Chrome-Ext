@@ -8,8 +8,7 @@
     {
       "matches": [
         "https://cursor.com/spending",
-        "https://cursor.com/dashboard*",
-        "<all_urls>"
+        "https://cursor.com/dashboard*"
       ],
       "js": [
         "utils/storage.js",
@@ -27,8 +26,7 @@
         "themes.json"
       ],
       "matches": [
-        "https://cursor.com/*",
-        "<all_urls>"
+        "https://cursor.com/*"
       ]
     }
   ],

@@ -1,6 +1,30 @@
 // utils/uiHelpers.js
 
+const DEBUG_STYLES = true;
 let themes = {};
+
+function logComputedStyles(el, name) {
+    if (!DEBUG_STYLES || !el) return;
+    requestAnimationFrame(() => {
+        try {
+            const c = getComputedStyle(el);
+            const summary = {
+                fontSize: c.fontSize,
+                fontFamily: c.fontFamily,
+                color: c.color,
+                background: c.backgroundColor,
+                borderRadius: c.borderRadius,
+                padding: c.padding,
+                margin: c.margin
+            };
+            console.groupCollapsed(`🧩 ${name} computed styles`);
+            console.table(summary);
+            console.groupEnd();
+        } catch (err) {
+            console.warn("logComputedStyles error:", err);
+        }
+    });
+}
 
 /**
  * Waits for an element to appear in the DOM.
@@ -72,11 +96,15 @@ function applyThemeStyles(el, theme, themeKey, state = "default") {
                 break;
             case "radius":
                 cssProp = "border-radius";
-                finalValue = `${value}px`;
+                if (typeof value === 'number') {
+                    finalValue = `${value}px`;
+                }
                 break;
             case "fontSize":
                 cssProp = "font-size";
-                finalValue = `${value}px`;
+                if (typeof value === 'number') {
+                    finalValue = `${value}px`;
+                }
                 break;
         }
 
@@ -84,6 +112,7 @@ function applyThemeStyles(el, theme, themeKey, state = "default") {
             el.style.setProperty(cssProp, finalValue, "important");
         }
     }
+    if (DEBUG_STYLES) logComputedStyles(el, themeKey || el.tagName);
 }
 
 
@@ -155,6 +184,8 @@ async function createPanel(themeName = 'dark') {
     makeDraggable(panel, dragHandle);
 
     document.body.appendChild(panel);
+
+    if (DEBUG_STYLES) logComputedStyles(panel, "panel (attached)");
 
     // Positioning logic remains the same
     if (!restorePanelPosition(panel)) {

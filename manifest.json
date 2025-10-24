@@ -23,7 +23,8 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "themes.json"
+        "themes.json",
+        "assets/icons/arrow-down.svg"
       ],
       "matches": [
         "https://cursor.com/*"

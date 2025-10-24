@@ -237,9 +237,17 @@ function createDatePicker(theme) {
     const today = new Date();
     const priorDate = new Date(new Date().setDate(today.getDate() - 30));
 
-    displayButton.innerHTML = `
-        <span id="smtm-date-range-display" style="white-space: nowrap;">${formatDateRange(priorDate, today)}</span>&nbsp;▼
-    `;
+    const dateRangeDisplay = document.createElement('span');
+    dateRangeDisplay.id = 'smtm-date-range-display';
+    dateRangeDisplay.style.whiteSpace = 'nowrap';
+    dateRangeDisplay.innerText = formatDateRange(priorDate, today);
+
+    const arrowIcon = document.createElement('img');
+    arrowIcon.src = chrome.runtime.getURL('assets/icons/arrow-down.svg');
+    arrowIcon.style.marginLeft = '8px';
+
+    displayButton.appendChild(dateRangeDisplay);
+    displayButton.appendChild(arrowIcon);
 
     applyThemeStyles(displayButton, theme, 'datePicker');
     Object.assign(displayButton.style, {

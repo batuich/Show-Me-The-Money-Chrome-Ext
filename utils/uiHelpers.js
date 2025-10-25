@@ -392,6 +392,27 @@ function createTotalDisplay(theme) {
 }
 
 
+function updateMissingDataContainerPosition() {
+    const panel = document.getElementById('show-me-the-money-panel');
+    const container = document.getElementById('smtm-missing-data-container');
+
+    if (!panel || !container) return;
+
+    // Defer to avoid layout thrashing and ensure panel dimensions are final
+    requestAnimationFrame(() => {
+        const top = panel.offsetTop + panel.offsetHeight + 6; // 6px margin
+        const left = panel.offsetLeft;
+        const width = panel.offsetWidth;
+
+        Object.assign(container.style, {
+            position: 'absolute',
+            top: `${top}px`,
+            left: `${left}px`,
+            width: `${width}px`,
+        });
+    });
+}
+
 /**
  * Makes an element draggable.
  * @param {HTMLElement} element The element to make draggable.
@@ -422,11 +443,7 @@ function makeDraggable(element, handle) {
     element.style.top = `${newTop}px`;
     element.style.left = `${newLeft}px`;
 
-    const missingDataContainer = document.getElementById('smtm-missing-data-container');
-    if (missingDataContainer) {
-        missingDataContainer.style.top = `${newTop + element.offsetHeight + 6}px`;
-        missingDataContainer.style.left = `${newLeft}px`;
-    }
+    updateMissingDataContainerPosition();
   }
 
   function closeDragElement() {
@@ -505,20 +522,15 @@ function toggleMissingDataLabel(themeName, missingDays) {
             container = document.createElement('div');
             container.id = 'smtm-missing-data-container';
             document.body.appendChild(container);
-        }
 
-        setTimeout(() => {
-            const panelRect = panel.getBoundingClientRect();
+            // Apply styles and position only when newly created
             applyThemeStyles(container, theme, 'missingDataContainer');
             Object.assign(container.style, {
-                position: 'absolute',
-                top: `${panelRect.bottom + window.scrollY}px`,
-                left: `${panelRect.left + window.scrollX}px`,
-                width: `${panelRect.width}px`,
                 zIndex: '9998',
                 pointerEvents: 'none'
             });
-        }, 0);
+            updateMissingDataContainerPosition();
+        }
 
         let label = container.querySelector('#smtm-missing-data-label');
         if (!label) {

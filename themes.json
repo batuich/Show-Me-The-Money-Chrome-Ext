@@ -107,9 +107,7 @@
 			}
 		},
 		"missingDataContainer": {
-			"default": {
-				"marginTop": "6px"
-			}
+			"default": {}
 		},
 		"missingDataLabel": {
 			"default": {

@@ -90,7 +90,7 @@ function parseTransactionTable() {
         return parseDivTable(divTable);
     }
 
-    const htmlTable = document.querySelector('table');
+    const htmlTable = document.querySelector('table.w-full');
     if (htmlTable) {
         console.log("Show Me The Money: Found HTML table.");
         return parseHtmlTable(htmlTable);

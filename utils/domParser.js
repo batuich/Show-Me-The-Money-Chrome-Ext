@@ -47,41 +47,70 @@ function parseDivTable(table) {
 /**
  * Parses a standard `<table>` element (found on `cursor.com/spending`).
  * @param {HTMLElement} table The table element.
- * @returns {Array} An array of transaction objects.
+ * @returns {Object} An object mapping dates to daily costs { "YYYY-MM-DD": cost, ... }.
  */
 function parseHtmlTable(table) {
-    const transactions = [];
+    const dailyCosts = {};
     const rows = table.querySelectorAll('tbody tr');
 
     rows.forEach(row => {
         const cells = row.querySelectorAll('td');
         if (cells.length >= 2) { // We need at least date and cost
-            const dateText = cells[0].innerText.trim();
-            const amountText = cells[cells.length - 1].innerText.trim(); // Last cell is the cost
+            // Get date from the first td, prefer title attribute
+            const firstCell = cells[0];
+            const dateText = firstCell.getAttribute('title') || firstCell.innerText.trim();
 
-            // Normalize date: "Oct 25, 2025" -> "2025-10-25"
+            // Normalize date: "Oct 25, 2025, 10:14:00 AM" -> "2025-10-25"
             const date = new Date(dateText);
             if (isNaN(date.getTime())) {
                 return; // Skip if date is invalid
             }
             const normalizedDate = date.toISOString().split('T')[0];
 
-            // Normalize amount: "$0.03" -> 0.03
-            const amount = parseFloat(amountText.replace(/[^0-9.-]+/g, ''));
+            // Extract cost from the last td
+            const lastCell = cells[cells.length - 1];
+            let amount = 0;
 
+            // Try to find div with title attribute starting with "$"
+            const costDiv = lastCell.querySelector('div[title^="$"]');
+            if (costDiv) {
+                const costTitle = costDiv.getAttribute('title');
+                amount = parseFloat(costTitle.replace(/[^0-9.-]+/g, ''));
+            } else {
+                // Fallback: look for span with "$" prefix
+                const costSpan = lastCell.querySelector('span');
+                if (costSpan) {
+                    const costText = costSpan.innerText.trim();
+                    if (costText.startsWith('$')) {
+                        amount = parseFloat(costText.replace(/[^0-9.-]+/g, ''));
+                    }
+                }
+            }
+
+            // If amount is still 0 or NaN, check if it's "Included"
+            if (isNaN(amount) || amount === 0) {
+                const lastCellText = lastCell.innerText.trim();
+                if (lastCellText.includes('Included')) {
+                    amount = 0;
+                }
+            }
+
+            // Aggregate costs for the same day
             if (!isNaN(amount)) {
-                const rowContent = `${normalizedDate}-${amount}`;
-                const id = simpleHash(rowContent);
-                transactions.push({ id, date: normalizedDate, amount: Math.abs(amount) });
+                if (dailyCosts[normalizedDate]) {
+                    dailyCosts[normalizedDate] += Math.abs(amount);
+                } else {
+                    dailyCosts[normalizedDate] = Math.abs(amount);
+                }
             }
         }
     });
-    return transactions;
+    return dailyCosts;
 }
 
 /**
  * Parses the transaction table on the page, supporting multiple structures.
- * @returns {Array} An array of transaction objects.
+ * @returns {Object|Array} An object mapping dates to costs for HTML tables, or an array of transaction objects for div tables.
  */
 function parseTransactionTable() {
     const divTable = document.querySelector('div[role="table"]');
@@ -97,5 +126,5 @@ function parseTransactionTable() {
     }
 
     console.log("Show Me The Money: No recognizable transaction table found.");
-    return [];
+    return {};
 }

@@ -45,17 +45,26 @@ async function init() {
 }
 
 function processTransactions() {
-  const newTransactions = parseTransactionTable();
+  const parsedData = parseTransactionTable();
   let newEntriesCount = 0;
 
-  newTransactions.forEach(t => {
-    if (addTransaction(t)) {
-      newEntriesCount++;
+  // Check if we got daily data (object) or transaction array (legacy)
+  if (parsedData && typeof parsedData === 'object') {
+    if (Array.isArray(parsedData)) {
+      // Legacy transaction array format
+      parsedData.forEach(t => {
+        if (addTransaction(t)) {
+          newEntriesCount++;
+        }
+      });
+    } else {
+      // New daily data format
+      newEntriesCount = mergeDailyData(parsedData);
     }
-  });
+  }
 
   if (newEntriesCount > 0) {
-    console.log(`Show Me The Money: Added ${newEntriesCount} new transactions.`);
+    console.log(`Show Me The Money: Added/updated ${newEntriesCount} entries.`);
   }
 
   updateTotalDisplay(); // Initial display with default range

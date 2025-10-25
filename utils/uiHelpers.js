@@ -503,6 +503,7 @@ function createTooltip(element, text, theme) {
     element.style.position = 'relative';
 
     element.onmouseover = () => {
+        // Match tooltip width to its parent label
         tooltip.style.width = `${element.offsetWidth}px`;
         tooltip.style.display = 'block';
     };

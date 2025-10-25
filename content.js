@@ -7,38 +7,39 @@ if (typeof window.SMTM_DEBUG === 'undefined') {
 }
 
 // Global debug helper functions (only define once)
-if (!window.debugLog) {
+if (typeof window.debugLog !== 'function') {
   window.debugLog = function(message, data) {
     if (!window.SMTM_DEBUG) return;
-    console.log(`[SMTM DEBUG] ${message}`, data !== undefined ? data : '');
+    console.log(`[SMTM DEBUG] ${message}`, data ?? '');
   };
 }
 
-if (!window.debugGroup) {
+if (typeof window.debugGroup !== 'function') {
   window.debugGroup = function(title) {
     if (!window.SMTM_DEBUG) return;
     console.group(`🔍 [SMTM DEBUG] ${title}`);
   };
 }
 
-if (!window.debugGroupEnd) {
+if (typeof window.debugGroupEnd !== 'function') {
   window.debugGroupEnd = function() {
     if (!window.SMTM_DEBUG) return;
     console.groupEnd();
   };
 }
 
-if (!window.debugTable) {
+if (typeof window.debugTable !== 'function') {
   window.debugTable = function(data) {
     if (!window.SMTM_DEBUG) return;
     console.table(data);
   };
 }
 
-// Local aliases for convenience
-const debugLog = window.debugLog;
-const debugGroup = window.debugGroup;
-const debugGroupEnd = window.debugGroupEnd;
+// Local aliases for convenience - use var to allow safe redeclaration on reinjection
+var debugLog = window.debugLog;
+var debugGroup = window.debugGroup;
+var debugGroupEnd = window.debugGroupEnd;
+var debugTable = window.debugTable;
 
 async function init() {
   debugGroup('Script Initialization');

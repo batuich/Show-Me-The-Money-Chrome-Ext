@@ -5,12 +5,40 @@ if (typeof window.SMTM_DEBUG === 'undefined') {
   window.SMTM_DEBUG = true;
 }
 
-// Use global debug functions (defined in content.js)
-// Create local aliases for convenience
-const debugLog = window.debugLog || function() {};
-const debugGroup = window.debugGroup || function() {};
-const debugGroupEnd = window.debugGroupEnd || function() {};
-const debugTable = window.debugTable || function() {};
+// Global debug helper functions (only define once)
+if (typeof window.debugLog !== 'function') {
+  window.debugLog = function(message, data) {
+    if (!window.SMTM_DEBUG) return;
+    console.log(`[SMTM DEBUG] ${message}`, data ?? '');
+  };
+}
+
+if (typeof window.debugGroup !== 'function') {
+  window.debugGroup = function(title) {
+    if (!window.SMTM_DEBUG) return;
+    console.group(`🔍 [SMTM DEBUG] ${title}`);
+  };
+}
+
+if (typeof window.debugGroupEnd !== 'function') {
+  window.debugGroupEnd = function() {
+    if (!window.SMTM_DEBUG) return;
+    console.groupEnd();
+  };
+}
+
+if (typeof window.debugTable !== 'function') {
+  window.debugTable = function(data) {
+    if (!window.SMTM_DEBUG) return;
+    console.table(data);
+  };
+}
+
+// Local aliases for convenience - use var to allow safe redeclaration on reinjection
+var debugLog = window.debugLog;
+var debugGroup = window.debugGroup;
+var debugGroupEnd = window.debugGroupEnd;
+var debugTable = window.debugTable;
 
 /**
  * A simple hash function to generate a unique ID from a string.

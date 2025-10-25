@@ -197,8 +197,7 @@ function createDragHandle(theme) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        height: '100%',
-        padding: '0 8px'
+        height: '100%'
     });
 
     const dotsContainer = document.createElement('div');

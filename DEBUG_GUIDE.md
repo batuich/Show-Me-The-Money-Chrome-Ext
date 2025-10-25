@@ -5,15 +5,13 @@ This guide explains how to use the comprehensive debugging features added to dia
 
 ## Enabling/Disabling Debug Mode
 
-Debug mode is controlled by the `window.SMTM_DEBUG` global variable, which is initialized in **content.js** (line 5-7):
+Debug mode is controlled by the `window.SMTM.DEBUG` global variable, which is initialized in **content.js** (line 13):
 
 ```javascript
-if (typeof window.SMTM_DEBUG === 'undefined') {
-  window.SMTM_DEBUG = true;  // Set to false to disable
-}
+if (typeof window.SMTM.DEBUG !== 'boolean') window.SMTM.DEBUG = true;
 ```
 
-To disable debug mode, change `true` to `false` and reload the extension. The variable is shared across all scripts using the `window` object to avoid redeclaration errors.
+To disable debug mode, change `true` to `false` and reload the extension. All debug functionality is namespaced under `window.SMTM.debug` to prevent redeclaration errors and support safe re-injection.
 
 ## Debug Features
 
@@ -153,16 +151,29 @@ Each retry is logged with a "🔄 Retry attempt" message.
 
 Once you've identified the issue:
 
-1. Set `window.SMTM_DEBUG = false` in **content.js** (line 6)
+1. Set `window.SMTM.DEBUG = false` in **content.js** (line 13)
 2. Reload the extension
 3. Debug badge will disappear
 4. Console will show minimal logs
 
 Alternatively, you can disable it at runtime in the browser console:
 ```javascript
-window.SMTM_DEBUG = false;
+window.SMTM.DEBUG = false;
 ```
 Then reload the page to apply the change.
+
+## Re-injection Protection
+
+The extension includes a re-injection guard to prevent multiple script injections:
+```javascript
+if (window.__SMTM_CONTENT_ATTACHED__) {
+  console.log('[SMTM] Content script already attached, skipping re-injection');
+  return;
+}
+window.__SMTM_CONTENT_ATTACHED__ = true;
+```
+
+This ensures the extension loads only once, even during SPA navigation or hot reloads.
 
 ## Performance Note
 

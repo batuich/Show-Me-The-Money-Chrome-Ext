@@ -1,22 +1,44 @@
 // content.js
 
 // Debug mode - set to false to disable detailed logging
-const SMTM_DEBUG = true;
-
-function debugLog(message, data) {
-  if (!SMTM_DEBUG) return;
-  console.log(`[SMTM DEBUG] ${message}`, data !== undefined ? data : '');
+// Use window to avoid redeclaration errors across multiple scripts
+if (typeof window.SMTM_DEBUG === 'undefined') {
+  window.SMTM_DEBUG = true;
 }
 
-function debugGroup(title) {
-  if (!SMTM_DEBUG) return;
-  console.group(`🔍 [SMTM DEBUG] ${title}`);
+// Global debug helper functions (only define once)
+if (!window.debugLog) {
+  window.debugLog = function(message, data) {
+    if (!window.SMTM_DEBUG) return;
+    console.log(`[SMTM DEBUG] ${message}`, data !== undefined ? data : '');
+  };
 }
 
-function debugGroupEnd() {
-  if (!SMTM_DEBUG) return;
-  console.groupEnd();
+if (!window.debugGroup) {
+  window.debugGroup = function(title) {
+    if (!window.SMTM_DEBUG) return;
+    console.group(`🔍 [SMTM DEBUG] ${title}`);
+  };
 }
+
+if (!window.debugGroupEnd) {
+  window.debugGroupEnd = function() {
+    if (!window.SMTM_DEBUG) return;
+    console.groupEnd();
+  };
+}
+
+if (!window.debugTable) {
+  window.debugTable = function(data) {
+    if (!window.SMTM_DEBUG) return;
+    console.table(data);
+  };
+}
+
+// Local aliases for convenience
+const debugLog = window.debugLog;
+const debugGroup = window.debugGroup;
+const debugGroupEnd = window.debugGroupEnd;
 
 async function init() {
   debugGroup('Script Initialization');
@@ -194,7 +216,7 @@ function updateTotalDisplay(startDate, endDate) {
  * Creates a debug badge indicator in the top-right corner
  */
 function createDebugBadge() {
-  if (!SMTM_DEBUG) return;
+  if (!window.SMTM_DEBUG) return;
   
   const badge = document.createElement('div');
   badge.id = 'smtm-debug-badge';
@@ -227,7 +249,7 @@ function createDebugBadge() {
  * Makes the debug badge blink to indicate parsing activity
  */
 function blinkDebugBadge() {
-  if (!SMTM_DEBUG) return;
+  if (!window.SMTM_DEBUG) return;
   
   const badge = document.getElementById('smtm-debug-badge');
   if (!badge) return;

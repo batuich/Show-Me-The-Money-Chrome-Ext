@@ -5,17 +5,15 @@ This guide explains how to use the comprehensive debugging features added to dia
 
 ## Enabling/Disabling Debug Mode
 
-Debug mode is controlled by the `SMTM_DEBUG` constant at the top of two files:
+Debug mode is controlled by the `window.SMTM_DEBUG` global variable, which is initialized in **content.js** (line 5-7):
 
-1. **content.js** (line 4):
-   ```javascript
-   const SMTM_DEBUG = true;  // Set to false to disable
-   ```
+```javascript
+if (typeof window.SMTM_DEBUG === 'undefined') {
+  window.SMTM_DEBUG = true;  // Set to false to disable
+}
+```
 
-2. **utils/domParser.js** (line 4):
-   ```javascript
-   const SMTM_DEBUG = true;  // Set to false to disable
-   ```
+To disable debug mode, change `true` to `false` and reload the extension. The variable is shared across all scripts using the `window` object to avoid redeclaration errors.
 
 ## Debug Features
 
@@ -155,10 +153,16 @@ Each retry is logged with a "🔄 Retry attempt" message.
 
 Once you've identified the issue:
 
-1. Set `SMTM_DEBUG = false` in both files
+1. Set `window.SMTM_DEBUG = false` in **content.js** (line 6)
 2. Reload the extension
 3. Debug badge will disappear
 4. Console will show minimal logs
+
+Alternatively, you can disable it at runtime in the browser console:
+```javascript
+window.SMTM_DEBUG = false;
+```
+Then reload the page to apply the change.
 
 ## Performance Note
 

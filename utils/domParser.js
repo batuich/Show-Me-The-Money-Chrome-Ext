@@ -1,7 +1,16 @@
 // utils/domParser.js
 
-// Debug mode - set to false to disable detailed logging
-const SMTM_DEBUG = true;
+// Debug mode - use window global to avoid redeclaration errors
+if (typeof window.SMTM_DEBUG === 'undefined') {
+  window.SMTM_DEBUG = true;
+}
+
+// Use global debug functions (defined in content.js)
+// Create local aliases for convenience
+const debugLog = window.debugLog || function() {};
+const debugGroup = window.debugGroup || function() {};
+const debugGroupEnd = window.debugGroupEnd || function() {};
+const debugTable = window.debugTable || function() {};
 
 /**
  * A simple hash function to generate a unique ID from a string.
@@ -16,29 +25,6 @@ function simpleHash(str) {
     hash &= hash; // Convert to 32bit integer
   }
   return new Uint32Array([hash])[0].toString(36);
-}
-
-/**
- * Debug logging helper
- */
-function debugLog(message, data) {
-  if (!SMTM_DEBUG) return;
-  console.log(`[SMTM DEBUG] ${message}`, data !== undefined ? data : '');
-}
-
-function debugGroup(title) {
-  if (!SMTM_DEBUG) return;
-  console.group(`🔍 [SMTM DEBUG] ${title}`);
-}
-
-function debugGroupEnd() {
-  if (!SMTM_DEBUG) return;
-  console.groupEnd();
-}
-
-function debugTable(data) {
-  if (!SMTM_DEBUG) return;
-  console.table(data);
 }
 
 /**

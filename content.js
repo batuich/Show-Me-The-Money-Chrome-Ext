@@ -1,53 +1,52 @@
 // content.js
 
-// Debug mode - set to false to disable detailed logging
-// Use window to avoid redeclaration errors across multiple scripts
-if (typeof window.SMTM_DEBUG === 'undefined') {
-  window.SMTM_DEBUG = true;
+// Re-injection guard - prevent multiple script injections
+if (window.__SMTM_CONTENT_ATTACHED__) {
+  console.log('[SMTM] Content script already attached, skipping re-injection');
+  return;
 }
+window.__SMTM_CONTENT_ATTACHED__ = true;
 
-// Global debug helper functions (only define once)
-if (typeof window.debugLog !== 'function') {
-  window.debugLog = function(message, data) {
-    if (!window.SMTM_DEBUG) return;
-    console.log(`[SMTM DEBUG] ${message}`, data ?? '');
+// Create global namespace and debug helpers (only once)
+if (!window.SMTM) window.SMTM = {};
+if (!window.SMTM.debug) window.SMTM.debug = {};
+if (typeof window.SMTM.DEBUG !== 'boolean') window.SMTM.DEBUG = true;
+
+if (typeof window.SMTM.debug.log !== 'function') {
+  window.SMTM.debug.log = function(message, data) {
+    if (!window.SMTM.DEBUG) return;
+    console.log('[SMTM DEBUG] ' + message, (data ?? ''));
   };
 }
 
-if (typeof window.debugGroup !== 'function') {
-  window.debugGroup = function(title) {
-    if (!window.SMTM_DEBUG) return;
-    console.group(`🔍 [SMTM DEBUG] ${title}`);
+if (typeof window.SMTM.debug.group !== 'function') {
+  window.SMTM.debug.group = function(label) {
+    if (!window.SMTM.DEBUG) return;
+    console.group('🔍 [SMTM DEBUG] ' + label);
   };
 }
 
-if (typeof window.debugGroupEnd !== 'function') {
-  window.debugGroupEnd = function() {
-    if (!window.SMTM_DEBUG) return;
+if (typeof window.SMTM.debug.groupEnd !== 'function') {
+  window.SMTM.debug.groupEnd = function() {
+    if (!window.SMTM.DEBUG) return;
     console.groupEnd();
   };
 }
 
-if (typeof window.debugTable !== 'function') {
-  window.debugTable = function(data) {
-    if (!window.SMTM_DEBUG) return;
-    console.table(data);
+if (typeof window.SMTM.debug.table !== 'function') {
+  window.SMTM.debug.table = function(obj) {
+    if (!window.SMTM.DEBUG) return;
+    console.table(obj);
   };
 }
 
-// Local aliases for convenience - use var to allow safe redeclaration on reinjection
-var debugLog = window.debugLog;
-var debugGroup = window.debugGroup;
-var debugGroupEnd = window.debugGroupEnd;
-var debugTable = window.debugTable;
-
 async function init() {
-  debugGroup('Script Initialization');
-  debugLog('Timestamp:', new Date().toISOString());
-  debugLog('document.readyState:', document.readyState);
-  debugLog('URL:', window.location.href);
-  debugLog('Hostname:', window.location.hostname);
-  debugGroupEnd();
+  window.SMTM.debug.group('Script Initialization');
+  window.SMTM.debug.log('Timestamp:', new Date().toISOString());
+  window.SMTM.debug.log('document.readyState:', document.readyState);
+  window.SMTM.debug.log('URL:', window.location.href);
+  window.SMTM.debug.log('Hostname:', window.location.hostname);
+  window.SMTM.debug.groupEnd();
   
   console.log("Show Me The Money: Initializing...");
 
@@ -62,22 +61,22 @@ async function init() {
   // The panel's position is handled by createPanel and restorePanelPosition
 
   // Initial parsing and update
-  debugLog('📊 Starting initial processTransactions...');
+  window.SMTM.debug.log('📊 Starting initial processTransactions...');
   processTransactions();
 
   // Set up a MutationObserver to watch for changes in the table
   const observer = new MutationObserver(mutations => {
-    debugGroup('MutationObserver triggered');
-    debugLog('Timestamp:', new Date().toISOString());
-    debugLog('Mutations count:', mutations.length);
+    window.SMTM.debug.group('MutationObserver triggered');
+    window.SMTM.debug.log('Timestamp:', new Date().toISOString());
+    window.SMTM.debug.log('Mutations count:', mutations.length);
     
     for (const mutation of mutations) {
       if (mutation.type === 'childList') {
-        debugLog('ChildList mutation detected');
-        debugLog('Added nodes:', mutation.addedNodes.length);
-        debugLog('Removed nodes:', mutation.removedNodes.length);
-        debugLog('Target:', mutation.target);
-        debugGroupEnd();
+        window.SMTM.debug.log('ChildList mutation detected');
+        window.SMTM.debug.log('Added nodes:', mutation.addedNodes.length);
+        window.SMTM.debug.log('Removed nodes:', mutation.removedNodes.length);
+        window.SMTM.debug.log('Target:', mutation.target);
+        window.SMTM.debug.groupEnd();
         
         // A simple check to see if rows were added/removed
         console.log("Show Me The Money: Table changed, reprocessing...");
@@ -89,65 +88,65 @@ async function init() {
   });
 
   // Identify the correct table container to observe
-  debugGroup('Setting up MutationObserver');
+  window.SMTM.debug.group('Setting up MutationObserver');
   const tableContainer = document.querySelector('div[role="table"]') || document.querySelector('table.w-full') || document.querySelector('table');
-  debugLog('Table container found?', !!tableContainer);
+  window.SMTM.debug.log('Table container found?', !!tableContainer);
   
   if (tableContainer) {
-      debugLog('Table container type:', tableContainer.tagName);
-      debugLog('Table container classes:', tableContainer.className);
+      window.SMTM.debug.log('Table container type:', tableContainer.tagName);
+      window.SMTM.debug.log('Table container classes:', tableContainer.className);
       
       // For div-tables, observe the container. For html tables, observe the tbody.
       const targetNode = tableContainer.tagName.toLowerCase() === 'table' ? tableContainer.querySelector('tbody') : tableContainer;
-      debugLog('Target node for observation:', targetNode);
+      window.SMTM.debug.log('Target node for observation:', targetNode);
       
       if (targetNode) {
           observer.observe(targetNode, { childList: true, subtree: true });
-          debugLog('✅ Observer started successfully');
+          window.SMTM.debug.log('✅ Observer started successfully');
           console.log("Show Me The Money: Observer started on table container.");
       } else {
-          debugLog('❌ Could not find tbody or suitable target');
+          window.SMTM.debug.log('❌ Could not find tbody or suitable target');
           console.log("Show Me The Money: Could not find a suitable node to observe for table changes.");
       }
   } else {
-      debugLog('❌ No table container found');
+      window.SMTM.debug.log('❌ No table container found');
       console.log("Show Me The Money: No table container found to observe.");
       
       // Set up a delayed retry mechanism
-      debugLog('Setting up delayed table detection (retry in 2s, 5s, 10s)...');
+      window.SMTM.debug.log('Setting up delayed table detection (retry in 2s, 5s, 10s)...');
       const retryTimes = [2000, 5000, 10000];
       retryTimes.forEach(delay => {
           setTimeout(() => {
-              debugLog(`🔄 Retry attempt at ${delay}ms...`);
+              window.SMTM.debug.log(`🔄 Retry attempt at ${delay}ms...`);
               const table = document.querySelector('table.w-full');
               if (table) {
-                  debugLog('✅ Table found on retry!');
+                  window.SMTM.debug.log('✅ Table found on retry!');
                   blinkDebugBadge();
                   processTransactions();
               } else {
-                  debugLog('❌ Still no table found');
+                  window.SMTM.debug.log('❌ Still no table found');
               }
           }, delay);
       });
   }
-  debugGroupEnd();
+  window.SMTM.debug.groupEnd();
 }
 
 function processTransactions() {
-  debugGroup('processTransactions');
-  debugLog('Timestamp:', new Date().toISOString());
+  window.SMTM.debug.group('processTransactions');
+  window.SMTM.debug.log('Timestamp:', new Date().toISOString());
   
   const parsedData = parseTransactionTable();
-  debugLog('Parsed data type:', Array.isArray(parsedData) ? 'Array' : typeof parsedData);
-  debugLog('Parsed data:', parsedData);
+  window.SMTM.debug.log('Parsed data type:', Array.isArray(parsedData) ? 'Array' : typeof parsedData);
+  window.SMTM.debug.log('Parsed data:', parsedData);
   
   let newEntriesCount = 0;
 
   // Check if we got daily data (object) or transaction array (legacy)
   if (parsedData && typeof parsedData === 'object') {
     if (Array.isArray(parsedData)) {
-      debugLog('Processing as legacy transaction array format');
-      debugLog('Array length:', parsedData.length);
+      window.SMTM.debug.log('Processing as legacy transaction array format');
+      window.SMTM.debug.log('Array length:', parsedData.length);
       // Legacy transaction array format
       parsedData.forEach(t => {
         if (addTransaction(t)) {
@@ -155,30 +154,30 @@ function processTransactions() {
         }
       });
     } else {
-      debugLog('Processing as new daily data format');
-      debugLog('Number of dates:', Object.keys(parsedData).length);
+      window.SMTM.debug.log('Processing as new daily data format');
+      window.SMTM.debug.log('Number of dates:', Object.keys(parsedData).length);
       // New daily data format
       newEntriesCount = mergeDailyData(parsedData);
     }
   } else {
-    debugLog('⚠️ No valid data returned from parseTransactionTable');
+    window.SMTM.debug.log('⚠️ No valid data returned from parseTransactionTable');
   }
 
-  debugLog('New/updated entries count:', newEntriesCount);
+  window.SMTM.debug.log('New/updated entries count:', newEntriesCount);
   
   if (newEntriesCount > 0) {
     console.log(`Show Me The Money: Added/updated ${newEntriesCount} entries.`);
   } else {
-    debugLog('⚠️ No new entries were added to storage');
+    window.SMTM.debug.log('⚠️ No new entries were added to storage');
   }
 
   // Check current storage state
   const currentData = getDailyUsageData();
-  debugLog('Current localStorage data:', currentData);
-  debugLog('Total dates in storage:', Object.keys(currentData).length);
+  window.SMTM.debug.log('Current localStorage data:', currentData);
+  window.SMTM.debug.log('Total dates in storage:', Object.keys(currentData).length);
 
   updateTotalDisplay(); // Initial display with default range
-  debugGroupEnd();
+  window.SMTM.debug.groupEnd();
 }
 
 function updateTotalDisplay(startDate, endDate) {
@@ -241,7 +240,7 @@ function createDebugBadge() {
   });
   
   document.body.appendChild(badge);
-  debugLog('✅ Debug badge created');
+  window.SMTM.debug.log('✅ Debug badge created');
   
   return badge;
 }
@@ -267,14 +266,14 @@ function blinkDebugBadge() {
 
 // Ensure the script runs after the page has fully loaded
 if (document.readyState === 'loading') {
-  debugLog('⏳ Waiting for DOMContentLoaded...');
+  window.SMTM.debug.log('⏳ Waiting for DOMContentLoaded...');
   document.addEventListener('DOMContentLoaded', () => {
-    debugLog('✅ DOMContentLoaded fired');
+    window.SMTM.debug.log('✅ DOMContentLoaded fired');
     createDebugBadge();
     init();
   });
 } else {
-  debugLog('✅ DOM already ready');
+  window.SMTM.debug.log('✅ DOM already ready');
   // Create debug badge immediately if DOM is ready
   if (document.body) {
     createDebugBadge();

@@ -1,44 +1,10 @@
 // utils/domParser.js
 
-// Debug mode - use window global to avoid redeclaration errors
-if (typeof window.SMTM_DEBUG === 'undefined') {
-  window.SMTM_DEBUG = true;
-}
-
-// Global debug helper functions (only define once)
-if (typeof window.debugLog !== 'function') {
-  window.debugLog = function(message, data) {
-    if (!window.SMTM_DEBUG) return;
-    console.log(`[SMTM DEBUG] ${message}`, data ?? '');
-  };
-}
-
-if (typeof window.debugGroup !== 'function') {
-  window.debugGroup = function(title) {
-    if (!window.SMTM_DEBUG) return;
-    console.group(`🔍 [SMTM DEBUG] ${title}`);
-  };
-}
-
-if (typeof window.debugGroupEnd !== 'function') {
-  window.debugGroupEnd = function() {
-    if (!window.SMTM_DEBUG) return;
-    console.groupEnd();
-  };
-}
-
-if (typeof window.debugTable !== 'function') {
-  window.debugTable = function(data) {
-    if (!window.SMTM_DEBUG) return;
-    console.table(data);
-  };
-}
-
-// Local aliases for convenience - use var to allow safe redeclaration on reinjection
-var debugLog = window.debugLog;
-var debugGroup = window.debugGroup;
-var debugGroupEnd = window.debugGroupEnd;
-var debugTable = window.debugTable;
+// Local aliases for convenience (optional - direct window.SMTM.debug calls work too)
+var log = window.SMTM?.debug?.log || function() {};
+var group = window.SMTM?.debug?.group || function() {};
+var groupEnd = window.SMTM?.debug?.groupEnd || function() {};
+var table = window.SMTM?.debug?.table || function() {};
 
 /**
  * A simple hash function to generate a unique ID from a string.
@@ -90,32 +56,32 @@ function parseDivTable(table) {
  * @returns {Object} An object mapping dates to daily costs { "YYYY-MM-DD": cost, ... }.
  */
 function parseHtmlTable(table) {
-    debugGroup('parseHtmlTable started');
-    debugLog('Table element:', table);
-    debugLog('Table classes:', table.className);
+    group('parseHtmlTable started');
+    log('Table element:', table);
+    log('Table classes:', table.className);
     
     const dailyCosts = {};
     const rows = table.querySelectorAll('tbody tr');
     
-    debugLog(`Found ${rows.length} rows in tbody`);
+    log(`Found ${rows.length} rows in tbody`);
     
     if (rows.length === 0) {
-        debugLog('⚠️ WARNING: No rows found! Checking table structure...');
-        debugLog('Table HTML (first 500 chars):', table.outerHTML.substring(0, 500));
-        debugLog('tbody exists?', !!table.querySelector('tbody'));
-        debugLog('All tr elements:', table.querySelectorAll('tr').length);
-        debugGroupEnd();
+        log('⚠️ WARNING: No rows found! Checking table structure...');
+        log('Table HTML (first 500 chars):', table.outerHTML.substring(0, 500));
+        log('tbody exists?', !!table.querySelector('tbody'));
+        log('All tr elements:', table.querySelectorAll('tr').length);
+        groupEnd();
         return dailyCosts;
     }
 
     // Preview first 3 rows
     if (rows.length > 0) {
-        debugGroup('First 3 rows preview');
+        group('First 3 rows preview');
         for (let i = 0; i < Math.min(3, rows.length); i++) {
-            debugLog(`Row ${i} innerText:`, rows[i].innerText);
-            debugLog(`Row ${i} HTML:`, rows[i].outerHTML.substring(0, 300));
+            log(`Row ${i} innerText:`, rows[i].innerText);
+            log(`Row ${i} HTML:`, rows[i].outerHTML.substring(0, 300));
         }
-        debugGroupEnd();
+        groupEnd();
     }
 
     const rowDetails = [];
@@ -151,7 +117,7 @@ function parseHtmlTable(table) {
             rowInfo.status = '❌ invalid date';
             rowInfo.dateParseResult = 'NaN';
             rowDetails.push(rowInfo);
-            debugLog(`⚠️ Row ${rowInfo.index}: Invalid date "${dateText}"`);
+            log(`⚠️ Row ${rowInfo.index}: Invalid date "${dateText}"`);
             return; // Skip if date is invalid
         }
         const normalizedDate = date.toISOString().split('T')[0];
@@ -217,16 +183,16 @@ function parseHtmlTable(table) {
         rowDetails.push(rowInfo);
     });
 
-    debugGroup('Row parsing details');
-    debugTable(rowDetails);
-    debugGroupEnd();
+    group('Row parsing details');
+    table(rowDetails);
+    groupEnd();
 
-    debugGroup('Final daily costs');
-    debugLog('Total unique dates found:', Object.keys(dailyCosts).length);
-    debugTable(dailyCosts);
-    debugGroupEnd();
+    group('Final daily costs');
+    log('Total unique dates found:', Object.keys(dailyCosts).length);
+    table(dailyCosts);
+    groupEnd();
 
-    debugGroupEnd(); // End parseHtmlTable
+    groupEnd(); // End parseHtmlTable
     return dailyCosts;
 }
 
@@ -235,59 +201,59 @@ function parseHtmlTable(table) {
  * @returns {Object|Array} An object mapping dates to costs for HTML tables, or an array of transaction objects for div tables.
  */
 function parseTransactionTable() {
-    debugGroup('parseTransactionTable - Table detection');
-    debugLog('Timestamp:', new Date().toISOString());
-    debugLog('document.readyState:', document.readyState);
+    group('parseTransactionTable - Table detection');
+    log('Timestamp:', new Date().toISOString());
+    log('document.readyState:', document.readyState);
     
     // Check for div table
     const divTable = document.querySelector('div[role="table"]');
-    debugLog('div[role="table"] found?', !!divTable);
+    log('div[role="table"] found?', !!divTable);
     if (divTable) {
-        debugLog('✅ Found div-based table:', divTable);
-        debugGroupEnd();
+        log('✅ Found div-based table:', divTable);
+        groupEnd();
         console.log("Show Me The Money: Found div-based table.");
         return parseDivTable(divTable);
     }
 
     // Check for HTML table
     const htmlTable = document.querySelector('table.w-full');
-    debugLog('table.w-full found?', !!htmlTable);
+    log('table.w-full found?', !!htmlTable);
     
     if (!htmlTable) {
         // Deep diagnostic if table not found
-        debugLog('❌ table.w-full NOT FOUND. Running diagnostics...');
+        log('❌ table.w-full NOT FOUND. Running diagnostics...');
         
         const allTables = document.querySelectorAll('table');
-        debugLog('Total <table> elements on page:', allTables.length);
+        log('Total <table> elements on page:', allTables.length);
         
         if (allTables.length > 0) {
-            debugGroup('All table elements found');
+            group('All table elements found');
             allTables.forEach((tbl, idx) => {
-                debugLog(`Table ${idx} classes:`, tbl.className);
-                debugLog(`Table ${idx} HTML preview:`, tbl.outerHTML.substring(0, 200));
+                log(`Table ${idx} classes:`, tbl.className);
+                log(`Table ${idx} HTML preview:`, tbl.outerHTML.substring(0, 200));
             });
-            debugGroupEnd();
+            groupEnd();
         }
         
         // Check if it might be in a shadow root
-        debugLog('Checking for shadow roots...');
+        log('Checking for shadow roots...');
         const elementsWithShadow = document.querySelectorAll('*');
         let shadowRootCount = 0;
         elementsWithShadow.forEach(el => {
             if (el.shadowRoot) {
                 shadowRootCount++;
-                debugLog('Shadow root found on:', el.tagName, el.className);
+                log('Shadow root found on:', el.tagName, el.className);
             }
         });
-        debugLog('Total shadow roots found:', shadowRootCount);
+        log('Total shadow roots found:', shadowRootCount);
         
-        debugGroupEnd();
+        groupEnd();
         console.log("Show Me The Money: No recognizable transaction table found.");
         return {};
     }
 
-    debugLog('✅ Found HTML table:', htmlTable);
-    debugGroupEnd();
+    log('✅ Found HTML table:', htmlTable);
+    groupEnd();
     console.log("Show Me The Money: Found HTML table.");
     return parseHtmlTable(htmlTable);
 }

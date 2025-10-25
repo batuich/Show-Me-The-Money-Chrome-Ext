@@ -55,16 +55,24 @@ function parseHtmlTable(table) {
 
     rows.forEach(row => {
         const cells = row.querySelectorAll('td');
-        if (cells.length >= 3) {
-            const date = cells[0].innerText.trim();
-            const description = cells[1].innerText.trim();
-            const amountText = cells[2].innerText.trim();
-            const amount = parseFloat(amountText.replace(/[^0-9.]/g, ''));
+        if (cells.length >= 2) { // We need at least date and cost
+            const dateText = cells[0].innerText.trim();
+            const amountText = cells[cells.length - 1].innerText.trim(); // Last cell is the cost
 
-            if (date && !isNaN(amount)) {
-                const rowContent = `${date}-${description}-${amountText}`;
+            // Normalize date: "Oct 25, 2025" -> "2025-10-25"
+            const date = new Date(dateText);
+            if (isNaN(date.getTime())) {
+                return; // Skip if date is invalid
+            }
+            const normalizedDate = date.toISOString().split('T')[0];
+
+            // Normalize amount: "$0.03" -> 0.03
+            const amount = parseFloat(amountText.replace(/[^0-9.-]+/g, ''));
+
+            if (!isNaN(amount)) {
+                const rowContent = `${normalizedDate}-${amount}`;
                 const id = simpleHash(rowContent);
-                transactions.push({ id, date, amount });
+                transactions.push({ id, date: normalizedDate, amount: Math.abs(amount) });
             }
         }
     });

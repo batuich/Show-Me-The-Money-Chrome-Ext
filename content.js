@@ -65,9 +65,10 @@ function updateTotalDisplay(startDate, endDate) {
   const history = getHistory();
 
   if (!startDate || !endDate) {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    startDate = thirtyDaysAgo;
     endDate = new Date();
-    startDate = new Date();
-    startDate.setDate(endDate.getDate() - 30);
   }
 
   const filteredHistory = history.filter(t => {
@@ -82,7 +83,14 @@ function updateTotalDisplay(startDate, endDate) {
 
   const theme = window.location.hostname.includes('cursor.com') ? 'cursor' : 'dark';
   const missingDays = checkForMissingDays(history, startDate, endDate);
-  toggleMissingDataLabel(theme, missingDays);
+
+  // Show warning only if today is not within the first 3 days of the month
+  const today = new Date();
+  if (today.getDate() > 3) {
+    toggleMissingDataLabel(theme, missingDays);
+  } else {
+    toggleMissingDataLabel(theme, []); // Pass empty array to hide it
+  }
 }
 
 // Ensure the script runs after the page has fully loaded

@@ -338,7 +338,12 @@ function createPresetButtons(theme) {
             const days = parseInt(preset.replace('d', ''));
             const endDate = new Date();
             const startDate = new Date();
-            startDate.setDate(endDate.getDate() - (days - 1));
+            startDate.setDate(endDate.getDate() - (days - 1)); // Correctly calculate start date
+            
+            // Manually set time to ensure full days are included
+            startDate.setHours(0, 0, 0, 0);
+            endDate.setHours(23, 59, 59, 999);
+
             updateTotalDisplay(startDate, endDate);
             updateDateRangeDisplay(startDate, endDate);
         };

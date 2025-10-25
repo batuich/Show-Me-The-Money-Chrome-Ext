@@ -482,8 +482,6 @@ function createTooltip(element, text, theme) {
     tooltip.innerText = text;
 
     applyThemeStyles(tooltip, theme, 'tooltip');
-    const panel = document.getElementById('show-me-the-money-panel');
-    const panelWidth = panel ? panel.offsetWidth : 200;
 
     Object.assign(tooltip.style, {
         position: 'absolute',
@@ -492,7 +490,6 @@ function createTooltip(element, text, theme) {
         transform: 'translateX(-50%)',
         zIndex: '10001',
         display: 'none',
-        maxWidth: `${panelWidth}px`,
         wordWrap: 'break-word',
         textAlign: 'center',
         pointerEvents: 'none'
@@ -500,8 +497,13 @@ function createTooltip(element, text, theme) {
 
     element.style.position = 'relative';
 
-    element.onmouseover = () => { tooltip.style.display = 'block'; };
-    element.onmouseout = () => { tooltip.style.display = 'none'; };
+    element.onmouseover = () => {
+        tooltip.style.width = `${element.offsetWidth}px`;
+        tooltip.style.display = 'block';
+    };
+    element.onmouseout = () => {
+        tooltip.style.display = 'none';
+    };
 }
 
 

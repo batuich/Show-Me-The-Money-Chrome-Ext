@@ -543,7 +543,8 @@ function toggleMissingDataLabel(themeName, missingDays) {
         label.style.pointerEvents = 'all';
         label.innerText = theme.labels.missingData.text;
 
-        createTooltip(label, `Missing data for: ${missingDays.join(', ')}`, theme);
+        const formattedMissingDays = groupConsecutiveDates(missingDays);
+        createTooltip(label, `Missing data for: ${formattedMissingDays}`, theme);
 
     } else if (container) {
         container.remove();

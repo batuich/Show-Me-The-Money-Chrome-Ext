@@ -1,11 +1,14 @@
 // content.js
 
-// Re-injection guard - prevent multiple script injections
-if (window.__SMTM_CONTENT_ATTACHED__) {
-  console.log('[SMTM] Content script already attached, skipping re-injection');
-  return;
-}
-window.__SMTM_CONTENT_ATTACHED__ = true;
+(function() {
+  'use strict';
+
+  // Re-injection guard - prevent multiple script injections
+  if (window.__SMTM_CONTENT_ATTACHED__) {
+    console.log('[SMTM] Content script already attached, skipping re-injection');
+    return;
+  }
+  window.__SMTM_CONTENT_ATTACHED__ = true;
 
 // Create global namespace and debug helpers (only once)
 if (!window.SMTM) window.SMTM = {};
@@ -265,21 +268,23 @@ function blinkDebugBadge() {
 }
 
 // Ensure the script runs after the page has fully loaded
-if (document.readyState === 'loading') {
-  window.SMTM.debug.log('⏳ Waiting for DOMContentLoaded...');
-  document.addEventListener('DOMContentLoaded', () => {
-    window.SMTM.debug.log('✅ DOMContentLoaded fired');
-    createDebugBadge();
-    init();
-  });
-} else {
-  window.SMTM.debug.log('✅ DOM already ready');
-  // Create debug badge immediately if DOM is ready
-  if (document.body) {
-    createDebugBadge();
+  if (document.readyState === 'loading') {
+    window.SMTM.debug.log('⏳ Waiting for DOMContentLoaded...');
+    document.addEventListener('DOMContentLoaded', () => {
+      window.SMTM.debug.log('✅ DOMContentLoaded fired');
+      createDebugBadge();
+      init();
+    });
   } else {
-    // Wait a bit if body isn't ready yet
-    setTimeout(createDebugBadge, 100);
+    window.SMTM.debug.log('✅ DOM already ready');
+    // Create debug badge immediately if DOM is ready
+    if (document.body) {
+      createDebugBadge();
+    } else {
+      // Wait a bit if body isn't ready yet
+      setTimeout(createDebugBadge, 100);
+    }
+    init();
   }
-  init();
-}
+
+})(); // End of IIFE

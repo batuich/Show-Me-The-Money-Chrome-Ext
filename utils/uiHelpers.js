@@ -161,6 +161,8 @@ async function createPanel(themeName = 'dark') {
 
     document.body.appendChild(panel);
 
+    createSharedTooltip(theme); // Create the single, shared tooltip
+
     if (DEBUG_STYLES) logComputedStyles(panel, "panel (attached)");
 
     // Positioning logic remains the same
@@ -244,12 +246,71 @@ function createPresetButtons(theme) {
         button.style.cursor = 'pointer';
         button.style.border = 'none';
 
-        button.onmouseover = () => {
-             if (!button.classList.contains('active')) applyThemeStyles(button, theme, 'button', 'hover');
-        };
-        button.onmouseout = () => {
-            if (!button.classList.contains('active')) applyThemeStyles(button, theme, 'button', 'default');
-        };
+        // --- Tooltip Logic ---
+        button.addEventListener('mouseenter', (e) => {
+            const tooltip = document.getElementById('smtm-shared-tooltip');
+            if (!button.classList.contains('active')) {
+                applyThemeStyles(button, theme, 'button', 'hover');
+            }
+            if (tooltip && typeof formatTooltipDate === 'function') {
+                tooltip.innerText = formatTooltipDate(preset);
+                tooltip.style.display = 'block';
+                requestAnimationFrame(() => {
+                    tooltip.style.opacity = '1';
+                });
+            }
+        });
+
+        button.addEventListener('mouseleave', () => {
+            const tooltip = document.getElementById('smtm-shared-tooltip');
+            if (!button.classList.contains('active')) {
+                applyThemeStyles(button, theme, 'button', 'default');
+            }
+            if (tooltip) {
+                tooltip.style.opacity = '0';
+                // Hide after transition
+                setTimeout(() => {
+                    if (tooltip.style.opacity === '0') {
+                        tooltip.style.display = 'none';
+                    }
+                }, 200);
+            }
+        });
+
+        button.addEventListener('mousemove', (e) => {
+            const tooltip = document.getElementById('smtm-shared-tooltip');
+            if (!tooltip) return;
+
+            const offsetX = 15;
+            const offsetY = 15;
+            const {
+                clientX: x,
+                clientY: y
+            } = e;
+            const {
+                innerWidth,
+                innerHeight
+            } = window;
+            const {
+                offsetWidth: tooltipWidth,
+                offsetHeight: tooltipHeight
+            } = tooltip;
+
+            let top = y + offsetY;
+            let left = x + offsetX;
+
+            // Flip if near viewport edges
+            if (left + tooltipWidth > innerWidth) {
+                left = x - tooltipWidth - offsetX;
+            }
+            if (top + tooltipHeight > innerHeight) {
+                top = y - tooltipHeight - offsetY;
+            }
+
+            tooltip.style.left = `${left}px`;
+            tooltip.style.top = `${top}px`;
+        });
+
 
         button.onclick = () => {
             document.querySelectorAll('#smtm-presets-container button').forEach(btn => {
@@ -263,7 +324,7 @@ function createPresetButtons(theme) {
             const endDate = new Date();
             const startDate = new Date();
             startDate.setDate(endDate.getDate() - (days - 1)); // Correctly calculate start date
-            
+
             // Manually set time to ensure full days are included
             startDate.setHours(0, 0, 0, 0);
             endDate.setHours(23, 59, 59, 999);
@@ -282,6 +343,25 @@ function createPresetButtons(theme) {
     }, 0);
 
     return container;
+}
+
+function createSharedTooltip(theme) {
+    if (document.getElementById('smtm-shared-tooltip')) return;
+
+    const tooltip = document.createElement('div');
+    tooltip.id = 'smtm-shared-tooltip';
+    applyThemeStyles(tooltip, theme, 'tooltip');
+
+    Object.assign(tooltip.style, {
+        position: 'fixed',
+        display: 'none',
+        zIndex: '10001',
+        pointerEvents: 'none',
+        transition: 'opacity 0.15s ease-in-out',
+        opacity: '0'
+    });
+
+    document.body.appendChild(tooltip);
 }
 
 function createTotalDisplay(theme) {

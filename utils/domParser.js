@@ -51,19 +51,69 @@ function parseDivTable(table) {
 }
 
 /**
+ * Waits for the table rows to stabilize (React dynamic loading).
+ * @param {HTMLElement} tableElement The table element.
+ * @returns {Promise<NodeList>} The final list of rows.
+ */
+async function waitForTableRows(tableElement) {
+    const maxWaitTime = 10000; // 10 seconds
+    const checkInterval = 500; // 500 ms
+    const maxRetries = maxWaitTime / checkInterval;
+    
+    let retryCount = 0;
+    let previousCount = 0;
+    let stableCount = 0;
+    const stabilityThreshold = 2; // Need 2 consecutive checks with same count
+    
+    log('⏳ Waiting for table rows to load...');
+    
+    while (retryCount < maxRetries) {
+        const rows = tableElement.querySelectorAll('tbody tr');
+        const currentCount = rows.length;
+        
+        log(`Total rows found: ${currentCount} (retry ${retryCount + 1}/${maxRetries})`);
+        
+        if (currentCount === previousCount && currentCount > 0) {
+            stableCount++;
+            log(`Row count stable (${stableCount}/${stabilityThreshold})`);
+            
+            if (stableCount >= stabilityThreshold) {
+                log(`✅ Row count stabilized at ${currentCount} rows`);
+                return rows;
+            }
+        } else {
+            stableCount = 0; // Reset stability counter if count changed
+        }
+        
+        previousCount = currentCount;
+        retryCount++;
+        
+        // Wait before next check
+        await new Promise(resolve => setTimeout(resolve, checkInterval));
+    }
+    
+    // Return whatever we have after timeout
+    const finalRows = tableElement.querySelectorAll('tbody tr');
+    log(`⚠️ Timeout reached. Proceeding with ${finalRows.length} rows`);
+    return finalRows;
+}
+
+/**
  * Parses a standard `<table>` element (found on `cursor.com/spending`).
  * @param {HTMLElement} tableElement The table element.
- * @returns {Object} An object mapping dates to daily costs { "YYYY-MM-DD": cost, ... }.
+ * @returns {Promise<Object>} An object mapping dates to daily costs { "YYYY-MM-DD": cost, ... }.
  */
-function parseHtmlTable(tableElement) {
+async function parseHtmlTable(tableElement) {
     group('parseHtmlTable started');
     log('Table element:', tableElement);
     log('Table classes:', tableElement.className);
     
     const dailyCosts = {};
-    const rows = tableElement.querySelectorAll('tbody tr');
     
-    log(`Found ${rows.length} rows in tbody`);
+    // Wait for rows to stabilize before parsing
+    const rows = await waitForTableRows(tableElement);
+    
+    log(`Total rows found: ${rows.length} (before parsing)`);
     
     if (rows.length === 0) {
         log('⚠️ WARNING: No rows found! Checking table structure...');
@@ -189,6 +239,7 @@ function parseHtmlTable(tableElement) {
 
     group('Final daily costs');
     log('Total unique dates found:', Object.keys(dailyCosts).length);
+    log('Total rows parsed:', rows.length);
     table(dailyCosts);
     groupEnd();
 
@@ -198,9 +249,9 @@ function parseHtmlTable(tableElement) {
 
 /**
  * Parses the transaction table on the page, supporting multiple structures.
- * @returns {Object|Array} An object mapping dates to costs for HTML tables, or an array of transaction objects for div tables.
+ * @returns {Promise<Object|Array>} An object mapping dates to costs for HTML tables, or an array of transaction objects for div tables.
  */
-function parseTransactionTable() {
+async function parseTransactionTable() {
     group('parseTransactionTable - Table detection');
     log('Timestamp:', new Date().toISOString());
     log('document.readyState:', document.readyState);
@@ -255,5 +306,5 @@ function parseTransactionTable() {
     log('✅ Found HTML table:', htmlTable);
     groupEnd();
     console.log("Show Me The Money: Found HTML table.");
-    return parseHtmlTable(htmlTable);
+    return await parseHtmlTable(htmlTable);
 }

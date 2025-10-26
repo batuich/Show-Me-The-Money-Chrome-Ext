@@ -23,18 +23,57 @@ function saveDailyUsageData(data) {
  * @returns {number} The number of new or updated entries.
  */
 function mergeDailyData(newData) {
+  // Local aliases for debug logging
+  const log = window.SMTM?.debug?.log || function() {};
+  const group = window.SMTM?.debug?.group || function() {};
+  const groupEnd = window.SMTM?.debug?.groupEnd || function() {};
+  
+  group('mergeDailyData');
+  
   const existingData = getDailyUsageData();
+  const beforeCount = Object.keys(existingData).length;
   let updateCount = 0;
+  let newDatesCount = 0;
+  let updatedDatesCount = 0;
+  let skippedDatesCount = 0;
+
+  log('Merging new data into localStorage...');
+  log('Existing dates before merge:', beforeCount);
+  log('New dates to merge:', Object.keys(newData).length);
 
   for (const [date, cost] of Object.entries(newData)) {
-    // Add new dates or update if the new cost is different/greater
-    if (!existingData[date] || existingData[date] !== cost) {
+    // Add new dates or update if the new cost is greater (accumulation over time)
+    if (!existingData[date]) {
       existingData[date] = cost;
       updateCount++;
+      newDatesCount++;
+      log(`✨ NEW: ${date} = $${cost.toFixed(4)}`);
+    } else if (cost > existingData[date]) {
+      const oldCost = existingData[date];
+      existingData[date] = cost;
+      updateCount++;
+      updatedDatesCount++;
+      log(`📈 UPDATED: ${date} = $${cost.toFixed(4)} (was $${oldCost.toFixed(4)})`);
+    } else {
+      skippedDatesCount++;
+      log(`⏭️ SKIPPED: ${date} = $${cost.toFixed(4)} (existing $${existingData[date].toFixed(4)} is >= new value)`);
     }
   }
 
   saveDailyUsageData(existingData);
+  
+  const afterCount = Object.keys(existingData).length;
+  
+  log('=== Merge Summary ===');
+  log('📊 Dates before merge:', beforeCount);
+  log('📊 Dates after merge:', afterCount);
+  log('✨ New dates added:', newDatesCount);
+  log('📈 Dates updated (higher cost):', updatedDatesCount);
+  log('⏭️ Dates skipped (same or lower):', skippedDatesCount);
+  log('Total changes:', updateCount);
+  
+  groupEnd();
+  
   return updateCount;
 }
 

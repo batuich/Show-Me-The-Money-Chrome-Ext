@@ -287,7 +287,9 @@ function createDatePicker(theme) {
     applyButton.onclick = () => {
         const startDate = new Date(startDateInput.value);
         const endDate = new Date(endDateInput.value);
-        updateTotalDisplay(startDate, endDate);
+        if (typeof window.updateTotalDisplay === 'function') {
+            updateTotalDisplay(startDate, endDate);
+        }
         updateDateRangeDisplay(startDate, endDate);
         calendarUI.style.display = 'none';
     };
@@ -344,7 +346,9 @@ function createPresetButtons(theme) {
             startDate.setHours(0, 0, 0, 0);
             endDate.setHours(23, 59, 59, 999);
 
-            updateTotalDisplay(startDate, endDate);
+            if (typeof window.updateTotalDisplay === 'function') {
+                updateTotalDisplay(startDate, endDate);
+            }
             updateDateRangeDisplay(startDate, endDate);
         };
 

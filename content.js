@@ -183,7 +183,8 @@ function processTransactions() {
   window.SMTM.debug.groupEnd();
 }
 
-function updateTotalDisplay(startDate, endDate) {
+// Make updateTotalDisplay globally accessible so it can be called from uiHelpers.js
+window.updateTotalDisplay = function(startDate, endDate) {
   const history = getHistory();
 
   if (!startDate || !endDate) {

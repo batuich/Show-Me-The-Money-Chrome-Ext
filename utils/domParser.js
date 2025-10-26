@@ -52,24 +52,24 @@ function parseDivTable(table) {
 
 /**
  * Parses a standard `<table>` element (found on `cursor.com/spending`).
- * @param {HTMLElement} table The table element.
+ * @param {HTMLElement} tableElement The table element.
  * @returns {Object} An object mapping dates to daily costs { "YYYY-MM-DD": cost, ... }.
  */
-function parseHtmlTable(table) {
+function parseHtmlTable(tableElement) {
     group('parseHtmlTable started');
-    log('Table element:', table);
-    log('Table classes:', table.className);
+    log('Table element:', tableElement);
+    log('Table classes:', tableElement.className);
     
     const dailyCosts = {};
-    const rows = table.querySelectorAll('tbody tr');
+    const rows = tableElement.querySelectorAll('tbody tr');
     
     log(`Found ${rows.length} rows in tbody`);
     
     if (rows.length === 0) {
         log('⚠️ WARNING: No rows found! Checking table structure...');
-        log('Table HTML (first 500 chars):', table.outerHTML.substring(0, 500));
-        log('tbody exists?', !!table.querySelector('tbody'));
-        log('All tr elements:', table.querySelectorAll('tr').length);
+        log('Table HTML (first 500 chars):', tableElement.outerHTML.substring(0, 500));
+        log('tbody exists?', !!tableElement.querySelector('tbody'));
+        log('All tr elements:', tableElement.querySelectorAll('tr').length);
         groupEnd();
         return dailyCosts;
     }

@@ -598,7 +598,7 @@ function toggleInfoTooltip(theme, show) {
 
         applyThemeStyles(container, theme, 'tooltip'); // Use same style as other tooltips
         Object.assign(container.style, {
-            zIndex: '9998',
+            zIndex: '10002',
             pointerEvents: 'none',
             transition: 'opacity 0.15s ease-in-out',
             opacity: '0',

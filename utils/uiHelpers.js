@@ -150,12 +150,10 @@ async function createPanel(themeName = 'dark') {
     });
 
     const dragHandle = createDragHandle(theme);
-    const datePicker = createDatePicker(theme);
     const presetsContainer = createPresetButtons(theme);
     const totalDisplay = createTotalDisplay(theme);
 
     panel.appendChild(dragHandle);
-    panel.appendChild(datePicker);
     panel.appendChild(presetsContainer);
     panel.appendChild(totalDisplay);
 
@@ -228,82 +226,6 @@ function createDragHandle(theme) {
     return handle;
 }
 
-function createDatePicker(theme) {
-    const container = document.createElement('div');
-    container.style.position = 'relative';
-
-    const displayButton = document.createElement('button');
-    const today = new Date();
-    const priorDate = new Date(new Date().setDate(today.getDate() - 30));
-
-    const dateRangeDisplay = document.createElement('span');
-    dateRangeDisplay.id = 'smtm-date-range-display';
-    dateRangeDisplay.style.whiteSpace = 'nowrap';
-    dateRangeDisplay.innerText = formatDateRange(priorDate, today);
-
-    const arrowIcon = document.createElement('img');
-    arrowIcon.src = chrome.runtime.getURL('assets/icons/arrow-down.svg');
-    arrowIcon.style.marginLeft = '8px';
-
-    displayButton.appendChild(dateRangeDisplay);
-    displayButton.appendChild(arrowIcon);
-
-    applyThemeStyles(displayButton, theme, 'datePicker');
-    Object.assign(displayButton.style, {
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        height: '100%'
-    });
-
-    displayButton.onmouseover = () => applyThemeStyles(displayButton, theme, 'datePicker', 'hover');
-    displayButton.onmouseout = () => applyThemeStyles(displayButton, theme, 'datePicker', 'default');
-
-    const calendarUI = document.createElement('div');
-    applyThemeStyles(calendarUI, theme, 'calendar');
-    Object.assign(calendarUI.style, {
-        display: 'none',
-        position: 'absolute',
-        top: '120%',
-        left: '0',
-        zIndex: '10000',
-        flexDirection: 'column',
-        gap: '8px'
-    });
-
-    const startDateInput = document.createElement('input');
-    startDateInput.type = 'date';
-    applyThemeStyles(startDateInput, theme, 'calendarInput');
-
-    const endDateInput = document.createElement('input');
-    endDateInput.type = 'date';
-    applyThemeStyles(endDateInput, theme, 'calendarInput');
-
-    const applyButton = document.createElement('button');
-    applyButton.innerText = 'Apply';
-    applyThemeStyles(applyButton, theme, 'button');
-    applyButton.style.cursor = 'pointer';
-
-    applyButton.onclick = () => {
-        const startDate = new Date(startDateInput.value);
-        const endDate = new Date(endDateInput.value);
-        if (typeof window.updateTotalDisplay === 'function') {
-            updateTotalDisplay(startDate, endDate);
-        }
-        updateDateRangeDisplay(startDate, endDate);
-        calendarUI.style.display = 'none';
-    };
-
-    displayButton.onclick = () => {
-        calendarUI.style.display = calendarUI.style.display === 'none' ? 'flex' : 'none';
-    };
-
-    calendarUI.append(startDateInput, endDateInput, applyButton);
-    container.append(displayButton, calendarUI);
-
-    return container;
-}
-
 function createPresetButtons(theme) {
     const container = document.createElement('div');
     container.id = 'smtm-presets-container';
@@ -349,7 +271,6 @@ function createPresetButtons(theme) {
             if (typeof window.updateTotalDisplay === 'function') {
                 updateTotalDisplay(startDate, endDate);
             }
-            updateDateRangeDisplay(startDate, endDate);
         };
 
         container.appendChild(button);
@@ -361,18 +282,6 @@ function createPresetButtons(theme) {
     }, 0);
 
     return container;
-}
-
-function formatDateRange(startDate, endDate) {
-    const options = { month: 'short', day: 'numeric' };
-    return `${startDate.toLocaleDateString('en-US', options)} - ${endDate.toLocaleDateString('en-US', options)}`;
-}
-
-function updateDateRangeDisplay(startDate, endDate) {
-    const displayElement = document.getElementById('smtm-date-range-display');
-    if (displayElement) {
-        displayElement.innerText = formatDateRange(startDate, endDate);
-    }
 }
 
 function createTotalDisplay(theme) {

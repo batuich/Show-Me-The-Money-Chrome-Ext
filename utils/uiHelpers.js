@@ -197,33 +197,20 @@ function createDragHandle(theme) {
         cursor: 'move',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
-        height: '100%'
+        justifyContent: 'center'
     });
 
-    const dotsContainer = document.createElement('div');
-    dotsContainer.style.display = 'flex';
-    dotsContainer.style.flexDirection = 'column';
-    dotsContainer.style.gap = '3px';
-
-    for (let i = 0; i < 3; i++) {
-        const dot = document.createElement('div');
-        applyThemeStyles(dot, theme, 'dragHandleDot', 'default');
-        Object.assign(dot.style, {
-            width: '3px',
-            height: '3px'
-        });
-        dotsContainer.appendChild(dot);
-    }
-    handle.appendChild(dotsContainer);
+    handle.innerHTML = `<svg width="6" height="16" viewBox="0 0 6 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<circle cx="3" cy="3" r="1" fill="#5D5D5D"/>
+<circle cx="3" cy="8" r="1" fill="#5D5D5D"/>
+<circle cx="3" cy="13" r="1" fill="#5D5D5D"/>
+</svg>`;
 
     handle.onmouseover = () => {
         applyThemeStyles(handle, theme, 'dragHandle', 'hover');
-        dotsContainer.childNodes.forEach(dot => applyThemeStyles(dot, theme, 'dragHandleDot', 'hover'));
     };
     handle.onmouseout = () => {
         applyThemeStyles(handle, theme, 'dragHandle', 'default');
-        dotsContainer.childNodes.forEach(dot => applyThemeStyles(dot, theme, 'dragHandleDot', 'default'));
     };
 
     return handle;

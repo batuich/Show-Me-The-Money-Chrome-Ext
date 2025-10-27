@@ -26,7 +26,7 @@
 		"dragHandle": {
 			"default": {
 				"backgroundColor": "#1E1F23",
-				"padding": "6px 2px",
+				"padding": "8px 2px",
 				"borderRadius": 4
 			},
 			"hover": {
@@ -45,7 +45,7 @@
 			"default": {
 				"backgroundColor": "transparent",
 				"color": "#B5B5B6",
-				"padding": "5px 10px",
+				"padding": "6px 10px",
 				"borderRadius": 4
 			},
 			"hover": {
@@ -61,7 +61,7 @@
 			"default": {
 				"backgroundColor": "#1E1F23",
 				"borderRadius": 4,
-				"padding": "5px 10px"
+				"padding": "6px 10px"
 			}
 		},
 		"totalLabel": {

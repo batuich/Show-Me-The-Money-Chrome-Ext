@@ -145,8 +145,7 @@ async function createPanel(themeName = 'dark') {
         display: 'flex',
         alignItems: 'center',
         gap: theme.common.spacing,
-        zIndex: '9999',
-        height: '36px'
+        zIndex: '9999'
     });
 
     const dragHandle = createDragHandle(theme);

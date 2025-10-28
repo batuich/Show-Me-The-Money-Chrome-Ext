@@ -38,8 +38,8 @@ function buildMenu() {
       <div class="section-row">
         <span class="section-title">Theme</span>
         <div class="toggle-group">
-          <button class="toggle-button" data-theme="light">Light</button>
-          <button class="toggle-button active" data-theme="dark">Dark</button>
+          <button class="menu-button" data-theme="light">Light</button>
+          <button class="menu-button active" data-theme="dark">Dark</button>
         </div>
       </div>
     </div>
@@ -48,7 +48,7 @@ function buildMenu() {
     <div class="menu-section" data-section="teach-mode">
       <div class="section-row">
         <span class="section-title">Teach Mode</span>
-        <button class="menu-button primary">Start detection</button>
+        <button class="menu-button">Start detection</button>
       </div>
     </div>
 
@@ -103,7 +103,7 @@ function applyThemeStyles() {
   if (!themeConfig) return;
   
   const container = document.getElementById('menu-container');
-  const { menu, section, title, iconButton, expandContent } = themeConfig;
+  const { menu, section, title, iconButton, expandContent, button } = themeConfig;
   
   // Apply menu styles
   if (menu) {
@@ -165,6 +165,41 @@ function applyThemeStyles() {
       inner.style.lineHeight = expandContent.lineHeight;
     });
   }
+
+  // Apply button styles
+  if (button) {
+    applyButtonStyles();
+  }
+}
+
+// Apply button styles
+function applyButtonStyles() {
+  const buttons = document.querySelectorAll('.menu-button');
+  const { button, buttonHover, buttonActive, buttonDisabled } = themeConfig;
+
+  buttons.forEach(btn => {
+    // Apply base styles
+    Object.assign(btn.style, button);
+
+    // Hover and active states
+    btn.addEventListener('mouseenter', () => {
+      Object.assign(btn.style, buttonHover);
+    });
+    btn.addEventListener('mouseleave', () => {
+      Object.assign(btn.style, button); // Revert to base
+    });
+    btn.addEventListener('mousedown', () => {
+      Object.assign(btn.style, buttonActive);
+    });
+    btn.addEventListener('mouseup', () => {
+      Object.assign(btn.style, buttonHover); // Revert to hover
+    });
+
+    // Handle disabled state
+    if (btn.disabled) {
+      Object.assign(btn.style, buttonDisabled);
+    }
+  });
 }
 
 // Setup event listeners
@@ -205,4 +240,3 @@ if (document.readyState === 'loading') {
 } else {
   initMenu();
 }
-

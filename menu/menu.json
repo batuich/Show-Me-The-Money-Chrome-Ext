@@ -2,7 +2,7 @@
   "menu": {
     "background": "#17181C",
     "padding": "0px",
-    "borderRadius": "0˝px"
+    "borderRadius": "0px"
   },
   "section": {
     "background": "transparent",
@@ -30,6 +30,30 @@
     "padding": "5px",
     "gap": "8px",
     "lineHeight": "1.4"
+  },
+  "button": {
+    "background": "#272B32",
+    "color": "#FFFFFF",
+    "fontSize": "13px",
+    "borderRadius": "4px",
+    "padding": "6px 10px",
+    "textAlign": "center",
+    "display": "flex",
+    "alignItems": "center",
+    "justifyContent": "center",
+    "transition": "background 0.2s ease, opacity 0.2s ease"
+  },
+  "buttonHover": {
+    "background": "#32363E",
+    "opacity": "0.9"
+  },
+  "buttonActive": {
+    "background": "#3A3E47",
+    "opacity": "1.0"
+  },
+  "buttonDisabled": {
+    "background": "#1E1F23",
+    "color": "#6B6C70",
+    "opacity": "0.5"
   }
 }
-

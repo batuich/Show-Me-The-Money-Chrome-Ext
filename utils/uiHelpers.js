@@ -233,6 +233,11 @@ function createPresetButtons(theme) {
         button.style.cursor = 'pointer';
         button.style.border = 'none';
 
+        if (preset === '1d') {
+            button.classList.add('active');
+            applyThemeStyles(button, theme, 'button', 'active');
+        }
+
         // --- Tooltip Logic ---
         button.addEventListener('mouseenter', (e) => {
             const tooltip = document.getElementById('smtm-shared-tooltip');
@@ -325,7 +330,7 @@ function createPresetButtons(theme) {
     });
 
     setTimeout(() => {
-        const defaultButton = container.querySelector('button[data-preset="30d"]');
+        const defaultButton = container.querySelector('button[data-preset="1d"]');
         if (defaultButton) defaultButton.click();
     }, 0);
 

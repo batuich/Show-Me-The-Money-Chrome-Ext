@@ -1,0 +1,35 @@
+{
+  "menu": {
+    "background": "#17181C",
+    "padding": "0px",
+    "borderRadius": "0˝px"
+  },
+  "section": {
+    "background": "transparent",
+    "padding": "6px",
+    "gap": "4px",
+    "borderTop": "1px solid #323438",
+    "firstChildBorder": "none"
+  },
+  "title": {
+    "color": "#FFFFFF",
+    "fontSize": "13px",
+    "padding": "5px"
+  },
+  "iconButton": {
+    "background": "#272B32",
+    "borderRadius": "4px",
+    "padding": "4px 6px",
+    "display": "flex",
+    "alignItems": "center",
+    "justifyContent": "center"
+  },
+  "expandContent": {
+    "color": "#FFFFFF",
+    "fontSize": "12px",
+    "padding": "5px",
+    "gap": "8px",
+    "lineHeight": "1.4"
+  }
+}
+

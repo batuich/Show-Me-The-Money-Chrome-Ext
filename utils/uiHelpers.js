@@ -305,6 +305,7 @@ function createPresetButtons(theme) {
 
 
         button.onclick = () => {
+            // Update active button styles
             document.querySelectorAll('#smtm-presets-container button').forEach(btn => {
                 btn.classList.remove('active');
                 applyThemeStyles(btn, theme, 'button', 'default');
@@ -312,27 +313,20 @@ function createPresetButtons(theme) {
             button.classList.add('active');
             applyThemeStyles(button, theme, 'button', 'active');
 
-            const days = parseInt(preset.replace('d', ''));
-            const endDate = new Date();
-            const startDate = new Date();
-            startDate.setDate(endDate.getDate() - (days - 1)); // Correctly calculate start date
+            // Update the global state
+            if (window.SMTM) {
+                window.SMTM.selectedPeriod = preset;
+            }
 
-            // Manually set time to ensure full days are included
-            startDate.setHours(0, 0, 0, 0);
-            endDate.setHours(23, 59, 59, 999);
-
+            // Recalculate and update the display
             if (typeof window.updateTotalDisplay === 'function') {
-                updateTotalDisplay(startDate, endDate);
+                // Call without arguments to use the new global state
+                window.updateTotalDisplay();
             }
         };
 
         container.appendChild(button);
     });
-
-    setTimeout(() => {
-        const defaultButton = container.querySelector('button[data-preset="1d"]');
-        if (defaultButton) defaultButton.click();
-    }, 0);
 
     return container;
 }

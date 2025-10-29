@@ -494,14 +494,21 @@ async function processTransactions() {
 }
 
 // Make updateTotalDisplay globally accessible so it can be called from uiHelpers.js
+window.SMTM.selectedPeriod = '1d'; // Default period
+
 window.updateTotalDisplay = function(startDate, endDate) {
   const history = getHistory();
 
   if (!startDate || !endDate) {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    startDate = thirtyDaysAgo;
+    const days = parseInt(window.SMTM.selectedPeriod.replace('d', ''));
+    const selectedDaysAgo = new Date();
+    selectedDaysAgo.setDate(selectedDaysAgo.getDate() - (days - 1));
+    startDate = selectedDaysAgo;
     endDate = new Date();
+
+    // Manually set time to ensure full days are included
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(23, 59, 59, 999);
   }
 
   const filteredHistory = history.filter(t => {

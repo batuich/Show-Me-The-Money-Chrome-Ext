@@ -43,7 +43,8 @@
     {
       "resources": [
         "themes.json",
-        "teachMode.js"
+        "teachMode.js",
+        "utils/tableParser.js"
       ],
       "matches": [
         "<all_urls>"

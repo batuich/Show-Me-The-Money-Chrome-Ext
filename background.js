@@ -7,7 +7,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         console.log(`Background: Injecting teachMode.js into tab ${tabId}`);
         chrome.scripting.executeScript({
           target: { tabId: tabId },
-          files: ["teachMode.js"]
+          files: ["utils/tableParser.js", "teachMode.js"]
         }, () => {
           if (chrome.runtime.lastError) {
             console.error('Background: Error injecting script:', chrome.runtime.lastError.message);

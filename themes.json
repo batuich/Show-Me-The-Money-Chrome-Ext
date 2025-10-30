@@ -1,4 +1,39 @@
 {
+	"teachMode": {
+		"tableOutline": {
+			"border": "2px dashed #007bff",
+			"borderRadius": "8px",
+			"boxShadow": "0 4px 12px rgba(0, 123, 255, 0.25)",
+			"transition": "box-shadow 0.3s ease-in-out"
+		},
+		"colPreHighlightBg": "rgba(255, 235, 59, 0.2)",
+		"colPreHighlightBorder": "1px dotted #FFEB3B",
+		"colHoverBg": "rgba(255, 235, 59, 0.4)",
+		"colHoverBorder": "1px solid #FFEB3B",
+		"colSelectedUniqueBg": "rgba(74, 144, 226, 0.25)",
+		"colSelectedValueBg": "rgba(245, 166, 35, 0.25)",
+		"transition": "all 0.2s ease-in-out",
+		"preColumnBase": {
+			"background": "rgba(128, 128, 128, 0.1)",
+			"border": "1px dotted #ccc"
+		},
+		"preColumnAmbiguous": {
+			"background": "rgba(255, 193, 7, 0.2)",
+			"border": "1px dotted #FFC107"
+		},
+		"preColumnValueCandidate": {
+			"background": "rgba(245, 166, 35, 0.3)",
+			"border": "1px solid #F5A623"
+		},
+		"preColumnUniqueCandidate": {
+			"background": "rgba(74, 144, 226, 0.3)",
+			"border": "1px solid #4A90E2"
+		},
+		"tableOutlineStrong": {
+			"border": "3px solid #0056b3",
+			"boxShadow": "0 6px 15px rgba(0, 86, 179, 0.4)"
+		}
+	},
 	"cursor": {
 		"base": {
 			"default": {
@@ -11,6 +46,13 @@
 		"labels": {
 			"missingData": {
 				"text": "Not enough data for selected period"
+			}
+		},
+		"highlight": {
+			"default": {
+				"border": "2px solid #4A90E2",
+				"background": "rgba(74, 144, 226, 0.1)",
+				"transition": "all 0.2s ease-in-out"
 			}
 		},
 		"panel": {

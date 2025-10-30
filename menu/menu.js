@@ -212,6 +212,22 @@ function setupEventListeners() {
       toggleExpand(targetId);
     });
   });
+
+  // Teach Mode button
+  const teachModeButton = document.querySelector('[data-section="teach-mode"] .menu-button');
+  if (teachModeButton) {
+    teachModeButton.addEventListener('click', () => {
+      console.log('Popup: "Start detection" button clicked. Sending message to background.');
+      chrome.runtime.sendMessage({ action: "startTeachMode" }, (response) => {
+        if (chrome.runtime.lastError) {
+          console.error('Popup: Error sending message:', chrome.runtime.lastError.message);
+        } else {
+          console.log('Popup: Message sent successfully, response:', response);
+        }
+        window.close(); // Close the popup after sending the message
+      });
+    });
+  }
 }
 
 // Toggle expand/collapse for sections

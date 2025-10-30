@@ -42,11 +42,11 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "themes.json"
+        "themes.json",
+        "teachMode.js"
       ],
       "matches": [
-        "https://cursor.com/*",
-        "https://www.cursor.com/*"
+        "<all_urls>"
       ]
     }
   ]

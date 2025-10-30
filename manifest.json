@@ -3,45 +3,51 @@
   "name": "Show Me The Money",
   "version": "1.0",
   "description": "Automatically summarizes credit usage on specified websites.",
-  "permissions": [],
   "content_scripts": [
     {
       "matches": [
-        "https://cursor.com/spending",
-        "https://cursor.com/dashboard*"
+        "https://cursor.com/*",
+        "https://www.cursor.com/*"
       ],
       "js": [
-        "utils/storage.js",
+        "content.js",
         "utils/domParser.js",
+        "utils/storage.js",
         "utils/dateHelpers.js",
-        "utils/uiHelpers.js",
-        "content.js"
-      ],
-      "css": []
-    }
-  ],
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "themes.json",
-        "assets/icons/arrow-down.svg"
-      ],
-      "matches": [
-        "https://cursor.com/*"
+        "utils/uiHelpers.js"
       ]
     }
   ],
+  "host_permissions": [
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "storage",
+    "activeTab",
+    "tabs",
+    "scripting"
+  ],
   "action": {
     "default_popup": "menu/index.html",
-    "default_icon": {
-      "16": "assets/icons/icon16.png",
-      "48": "assets/icons/icon48.png",
-      "128": "assets/icons/icon128.png"
-    }
+    "default_title": "Show Me The Money"
   },
   "icons": {
     "16": "assets/icons/icon16.png",
     "48": "assets/icons/icon48.png",
     "128": "assets/icons/icon128.png"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "themes.json"
+      ],
+      "matches": [
+        "https://cursor.com/*",
+        "https://www.cursor.com/*"
+      ]
+    }
+  ]
 }

@@ -1,7 +1,6 @@
 // utils/uiHelpers.js
 
 const DEBUG_STYLES = true;
-let themes = {};
 
 function logComputedStyles(el, name) {
     if (!DEBUG_STYLES || !el) return;
@@ -64,15 +63,6 @@ function waitForElement(selector, timeout = 10000) {
  * Fetches and stores themes from themes.json.
  * @returns {Promise<void>} A promise that resolves when themes are loaded.
  */
-function loadThemes() {
-  return fetch(chrome.runtime.getURL('themes.json'))
-    .then(response => response.json())
-    .then(data => {
-      themes = data;
-    })
-    .catch(error => console.error('Show Me The Money: Error loading themes:', error));
-}
-
 function applyThemeStyles(el, theme, themeKey, state = "default") {
     const style = theme[themeKey]?.[state];
     if (!style || !el) return;
@@ -130,6 +120,7 @@ async function positionPanelInitially(panel) {
  * @returns {HTMLElement} The created panel element.
  */
 async function createPanel(themeName = 'dark') {
+    const themes = window.SMTM.themes || {};
     const theme = themes[themeName];
     if (!theme) {
         console.error(`Show Me The Money: Theme "${themeName}" not found.`);
@@ -509,6 +500,7 @@ function toggleMissingDataLabel(themeName, missingDays) {
     if (!panel) return;
 
     let container = document.getElementById('smtm-missing-data-container');
+    const themes = window.SMTM.themes || {};
     const theme = themes[themeName];
 
     if (missingDays.length > 0) {

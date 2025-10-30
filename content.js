@@ -43,6 +43,22 @@ if (typeof window.SMTM.debug.table !== 'function') {
   };
 }
 
+async function loadThemes() {
+  try {
+    const url = chrome.runtime.getURL('themes.json');
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch themes: ${response.statusText}`);
+    }
+    const themes = await response.json();
+    window.SMTM.themes = themes; // Store themes globally
+    window.SMTM.debug.log('Themes loaded successfully', themes);
+  } catch (error) {
+    console.error('[SMTM] Error loading themes:', error);
+    window.SMTM.themes = {}; // Fallback to empty object
+  }
+}
+
 async function init() {
   window.SMTM.debug.group('Script Initialization');
   window.SMTM.debug.log('Timestamp:', new Date().toISOString());

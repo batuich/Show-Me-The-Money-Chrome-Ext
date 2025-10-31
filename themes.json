@@ -57,7 +57,7 @@
 		},
 		"panel": {
 			"default": {
-				"backgroundColor": "#17181C",
+				"backgroundColor": "#13120A",
 				"border": "none",
 				"color": "#FFF",
 				"padding": "2px",
@@ -67,12 +67,12 @@
 		},
 		"dragHandle": {
 			"default": {
-				"backgroundColor": "#1E1F23",
+				"backgroundColor": "#1E1C15",
 				"padding": "8px 2px",
 				"borderRadius": 4
 			},
 			"hover": {
-				"backgroundColor": "#26282E"
+				"backgroundColor": "#25231C"
 			}
 		},
 		"dragHandleDot": {
@@ -91,17 +91,17 @@
 				"borderRadius": 4
 			},
 			"hover": {
-				"backgroundColor": "#1e1f23",
+				"backgroundColor": "#25231C",
 				"color": "#fff"
 			},
 			"active": {
-				"backgroundColor": "#1e1f23",
+				"backgroundColor": "#1E1C15",
 				"color": "#fff"
 			}
 		},
 		"totalBlock": {
 			"default": {
-				"backgroundColor": "#1E1F23",
+				"backgroundColor": "#1E1C15",
 				"borderRadius": 4,
 				"padding": "6px 10px"
 			}
@@ -131,7 +131,7 @@
 		},
 		"tooltip": {
 			"default": {
-				"backgroundColor": "#1E1F23",
+				"backgroundColor": "#1E1C15",
 				"color": "#fff",
 				"fontSize": 12,
 				"padding": "4px 4px",

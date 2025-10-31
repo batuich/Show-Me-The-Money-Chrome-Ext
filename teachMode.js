@@ -107,6 +107,7 @@
         highlight.style.height = `${tableRect.height}px`;
         highlight.dataset.tableId = tableInfo.id;
         highlight.dataset.colIndex = colIndex;
+        highlight.dataset.colSelector = getCssSelector(firstCell); // For re-applying mapping
 
         overlayContainer.appendChild(highlight);
     }
@@ -139,6 +140,10 @@
         
         selectionState.currentRole = (role === 'unique') ? 'value' : null;
         updateLegend();
+
+        if (!selectionState.currentRole) {
+            saveMapping();
+        }
     }
 
     function analyzeAndHighlight() {
@@ -175,8 +180,6 @@
             const selection = selectionState[role];
             const info = detectedTables.find(t => t.id === selection.tableId);
             const colIdx = parseInt(selection.colIndex, 10);
-            
-            // Find a representative cell for selector (e.g., first data row)
             const cell = info.normalized.matrix[0]?.[colIdx]?.element;
             if (!cell) {
                 console.error(`[SMTM] Could not find cell for role ${role}`);
@@ -202,10 +205,47 @@
                     value: valueMapping
                 };
                 window.localStorage.setItem(SMTM_LOCAL_CONFIG_KEY, JSON.stringify(localConfig));
-                console.log('[SMTM] New mapping saved:', localConfig.mapping);
+                console.log('[SMTM] Mapping saved to localStorage');
             }
         } catch (error) {
             console.error('[SMTM] Error saving mapping:', error);
+        }
+    }
+
+    function loadAndApplyMapping() {
+        try {
+            const localConfig = JSON.parse(window.localStorage.getItem(SMTM_LOCAL_CONFIG_KEY));
+            if (!localConfig?.mapping?.unique?.selector || !localConfig?.mapping?.value?.selector) {
+                return;
+            }
+
+            const { unique, value } = localConfig.mapping;
+
+            // Use querySelectorAll to handle cases where selector might not be unique enough
+            const uniqueEls = document.querySelectorAll(`.smtm-col-highlight[data-col-selector="${unique.selector}"]`);
+            const valueEls = document.querySelectorAll(`.smtm-col-highlight[data-col-selector="${value.selector}"]`);
+
+            if (uniqueEls.length > 0) {
+                const uniqueEl = uniqueEls[0]; // Assume first match is correct
+                selectionState.unique = { tableId: uniqueEl.dataset.tableId, colIndex: uniqueEl.dataset.colIndex };
+                uniqueEl.classList.remove('smtm-col-base');
+                uniqueEl.classList.add('smtm-col-unique');
+            }
+
+            if (valueEls.length > 0) {
+                const valueEl = valueEls[0]; // Assume first match is correct
+                selectionState.value = { tableId: valueEl.dataset.tableId, colIndex: valueEl.dataset.colIndex };
+                valueEl.classList.remove('smtm-col-base');
+                valueEl.classList.add('smtm-col-value');
+            }
+
+            if (uniqueEls.length > 0 && valueEls.length > 0) {
+                selectionState.currentRole = null;
+                updateLegend();
+                console.log('[SMTM] Previously saved mapping loaded and applied.');
+            }
+        } catch (error) {
+            console.error('[SMTM] Error loading or applying mapping:', error);
         }
     }
 
@@ -222,6 +262,7 @@
     // --- Activation ---
     createLegend();
     analyzeAndHighlight();
+    loadAndApplyMapping(); // Apply saved mapping after highlights are created
     document.addEventListener('click', handleColumnClick, true);
 
     window.SMTM_cleanupTeachMode = cleanup;

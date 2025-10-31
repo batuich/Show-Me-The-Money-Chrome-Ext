@@ -77,6 +77,19 @@ async function init() {
   // Create the panel and insert it into the DOM
   const panel = await createPanel(theme);
 
+  // Restore and apply panel theme from storage. We use chrome.storage.local
+  // as it's the correct way for extensions to persist and share data.
+  try {
+    chrome.storage.local.get('smtmPanelTheme', (result) => {
+      const themeName = result.smtmPanelTheme || 'light'; // Default to 'light'
+      window.SMTM.debug.log(`Restoring panel theme: ${themeName}`);
+      applyPanelTheme(themeName);
+    });
+  } catch (e) {
+    console.error('[SMTM] Error reading theme from storage:', e);
+    applyPanelTheme('light'); // Fallback to light theme on error
+  }
+
   // The panel's position is handled by createPanel and restorePanelPosition
 
   // Initial parsing and update
@@ -619,6 +632,82 @@ function blinkDebugBadge() {
       setTimeout(createDebugBadge, 100);
     }
     init();
+  }
+
+  // Listen for theme changes from the popup menu
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "applyTheme" && request.theme) {
+      window.SMTM.debug.log(`🎨 Received theme update: ${request.theme}`);
+      applyPanelTheme(request.theme);
+      sendResponse({ status: "theme applied" });
+    }
+    return true; // Keep channel open for async responses
+  });
+
+  /**
+   * Applies a named theme to the SMTM panel by injecting a style block.
+   * @param {string} themeName - The name of the theme to apply (e.g., 'light', 'dark').
+   */
+  function applyPanelTheme(themeName) {
+    if (!themeName) {
+      window.SMTM.debug.log('⚠️ applyPanelTheme called with no themeName, defaulting to "light"');
+      themeName = 'light';
+    }
+
+    if (!window.SMTM.themes || !window.SMTM.themes.panelThemes) {
+      console.error('[SMTM] Panel themes not loaded.');
+      return;
+    }
+
+    const themeConfig = window.SMTM.themes.panelThemes[themeName];
+    if (!themeConfig) {
+      console.error(`[SMTM] Theme "${themeName}" not found in themes.json.`);
+      return;
+    }
+
+    const panel = document.querySelector('#smtm-panel');
+    if (!panel) {
+      window.SMTM.debug.log('Panel not found in DOM, cannot apply theme yet. Retrying...');
+      setTimeout(() => applyPanelTheme(themeName), 500);
+      return;
+    }
+    
+    window.SMTM.debug.log(`Applying panel theme: ${themeName}`, themeConfig);
+
+    const styleId = 'smtm-panel-theme-styles';
+    let styleElement = document.getElementById(styleId);
+    if (!styleElement) {
+      styleElement = document.createElement('style');
+      styleElement.id = styleId;
+      document.head.appendChild(styleElement);
+    }
+
+    // Generate CSS from the theme configuration.
+    const css = `
+      #smtm-panel {
+        background: ${themeConfig.panelBackground} !important;
+        color: ${themeConfig.panelTextColor} !important;
+        border: ${themeConfig.panelBorder} !important;
+        box-shadow: ${themeConfig.panelShadow} !important;
+      }
+      #smtm-panel .total-value {
+        color: ${themeConfig.accentColor} !important;
+      }
+      #smtm-panel button {
+        background: ${themeConfig.buttonBackground} !important;
+        color: ${themeConfig.buttonTextColor} !important;
+        border: none !important;
+      }
+      #smtm-panel button.active, #smtm-panel button:hover {
+        background: ${themeConfig.buttonActiveBackground} !important;
+      }
+      #smtm-panel .total-label {
+        color: ${themeConfig.panelTextColor} !important;
+      }
+    `;
+    
+    styleElement.textContent = css;
+    window.SMTM.debug.log('Applied panel theme styles.');
   }
 
 })(); // End of IIFE

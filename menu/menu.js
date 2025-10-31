@@ -23,6 +23,9 @@ async function initMenu() {
     
     // Setup event listeners
     setupEventListeners();
+    
+    // Setup theme
+    setupTheme();
   } catch (error) {
     console.error('Error initializing menu:', error);
   }
@@ -204,6 +207,32 @@ function applyButtonStyles() {
 
 // Setup event listeners
 function setupEventListeners() {
+  // Theme toggle buttons
+  const themeButtons = document.querySelectorAll('[data-section="theme"] .menu-button');
+  themeButtons.forEach(button => {
+    button.addEventListener('click', (e) => {
+      const selectedTheme = e.currentTarget.getAttribute('data-theme');
+      
+      // Update active button
+      themeButtons.forEach(btn => btn.classList.remove('active'));
+      e.currentTarget.classList.add('active');
+      
+      // Save to chrome.storage.local
+      chrome.storage.local.set({ smtmPanelTheme: selectedTheme });
+
+      // Notify content script to update theme
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0] && tabs[0].id) {
+          chrome.tabs.sendMessage(tabs[0].id, { action: "applyTheme", theme: selectedTheme }, (response) => {
+            if (chrome.runtime.lastError) {
+              console.error('Error sending message to content script:', chrome.runtime.lastError.message);
+            }
+          });
+        }
+      });
+    });
+  });
+
   // Expandable sections
   const expandTriggers = document.querySelectorAll('[data-expand]');
   expandTriggers.forEach(trigger => {
@@ -228,6 +257,52 @@ function setupEventListeners() {
       });
     });
   }
+}
+
+// Toggle expand/collapse for sections
+function toggleExpand(sectionId) {
+  const content = document.querySelector(`[data-content="${sectionId}"]`);
+  const iconButton = document.querySelector(`.icon-button[data-expand="${sectionId}"]`);
+  
+  if (!content || !iconButton) return;
+  
+  const isOpen = content.classList.contains('open');
+  
+  if (isOpen) {
+    // Close
+    content.classList.remove('open');
+    iconButton.classList.remove('expanded');
+  } else {
+    // Open
+    content.classList.add('open');
+    iconButton.classList.add('expanded');
+  }
+}
+
+// Setup theme state
+function setupTheme() {
+  const lightButton = document.querySelector('[data-theme="light"]');
+  const darkButton = document.querySelector('[data-theme="dark"]');
+
+  chrome.storage.local.get('smtmPanelTheme', (result) => {
+    const currentTheme = result.smtmPanelTheme;
+
+    if (!currentTheme) {
+      // On first launch, set theme to 'light' but display 'dark' as active
+      chrome.storage.local.set({ smtmPanelTheme: 'light' });
+      darkButton.classList.add('active');
+      lightButton.classList.remove('active');
+    } else {
+      // On subsequent launches, reflect the saved theme
+      if (currentTheme === 'light') {
+        lightButton.classList.add('active');
+        darkButton.classList.remove('active');
+      } else {
+        darkButton.classList.add('active');
+        lightButton.classList.remove('active');
+      }
+    }
+  });
 }
 
 // Toggle expand/collapse for sections

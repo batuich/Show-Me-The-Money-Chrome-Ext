@@ -3,7 +3,7 @@
     console.log(`[SMTM] Teach Mode activated on ${window.location.hostname}`);
 
     const SMTM_LOCAL_CONFIG_KEY = 'smtmLocalConfig';
-    const CURRENT_VERSION = '1.2'; // Updated version
+    const CURRENT_VERSION = '1.3'; // Updated version for new logic
 
     // --- Initialize Local Config ---
     try {
@@ -14,6 +14,9 @@
                 createdAt: new Date().toISOString(), version: CURRENT_VERSION,
             };
             window.localStorage.setItem(SMTM_LOCAL_CONFIG_KEY, JSON.stringify(localConfig));
+        } else {
+            // Clear old highlight classes if any exist from a previous session
+            document.querySelectorAll('.smtm-col-highlight, .smtm-table-outline').forEach(el => el.remove());
         }
     } catch (error) {
         console.error('[SMTM] Error accessing localStorage:', error);
@@ -26,23 +29,19 @@
 
     const styles = {
         tableOutline: theme.tableOutline || { border: '2px dashed #007bff' },
-        preColumnBase: theme.preColumnBase || { background: 'rgba(128,128,128,0.1)', border: '1px dotted #ccc' },
-        preColumnAmbiguous: theme.preColumnAmbiguous || { background: 'rgba(255,193,7,0.2)', border: '1px dotted #FFC107' },
-        preColumnValueCandidate: theme.preColumnValueCandidate || { background: 'rgba(245,166,35,0.3)', border: '1px solid #F5A623' },
-        preColumnUniqueCandidate: theme.preColumnUniqueCandidate || { background: 'rgba(74,144,226,0.3)', border: '1px solid #4A90E2' },
-        colSelectedUniqueBg: theme.colSelectedUniqueBg || 'rgba(74, 144, 226, 0.25)',
-        colSelectedValueBg: theme.colSelectedValueBg || 'rgba(245, 166, 35, 0.25)',
+        colBaseHighlight: theme.colBaseHighlight || 'rgba(255, 230, 150, 0.30)',
+        colUniqueHighlight: theme.colUniqueHighlight || 'rgba(100, 200, 255, 0.40)',
+        colValueHighlight: theme.colValueHighlight || 'rgba(255, 180, 120, 0.40)',
+        highlightBorder: theme.highlightBorder || '2px solid rgba(0, 0, 0, 0.20)',
         transition: theme.transition || 'all 0.2s ease-in-out'
     };
 
     styleElement.sheet.insertRule(`.smtm-table-outline { position: absolute; z-index: 9998; border: ${styles.tableOutline.border}; border-radius: ${styles.tableOutline.borderRadius || '8px'}; box-shadow: ${styles.tableOutline.boxShadow || 'none'}; pointer-events: none; transition: ${styles.transition}; }`);
-    styleElement.sheet.insertRule(`.smtm-col-highlight { position: absolute; z-index: 9999; pointer-events: auto; cursor: pointer; transition: ${styles.transition}; }`);
-    styleElement.sheet.insertRule(`.smtm-col-base { background: ${styles.preColumnBase.background}; border: ${styles.preColumnBase.border}; }`);
-    styleElement.sheet.insertRule(`.smtm-col-ambiguous { background: ${styles.preColumnAmbiguous.background}; border: ${styles.preColumnAmbiguous.border}; }`);
-    styleElement.sheet.insertRule(`.smtm-col-value { background: ${styles.preColumnValueCandidate.background}; border: ${styles.preColumnValueCandidate.border}; }`);
-    styleElement.sheet.insertRule(`.smtm-col-unique { background: ${styles.preColumnUniqueCandidate.background}; border: ${styles.preColumnUniqueCandidate.border}; }`);
-    styleElement.sheet.insertRule(`.smtm-col-selected-unique { background-color: ${styles.colSelectedUniqueBg} !important; }`);
-    styleElement.sheet.insertRule(`.smtm-col-selected-value { background-color: ${styles.colSelectedValueBg} !important; }`);
+    styleElement.sheet.insertRule(`.smtm-col-highlight { position: absolute; z-index: 9999; pointer-events: auto; cursor: pointer; transition: ${styles.transition}; box-sizing: border-box; }`);
+    styleElement.sheet.insertRule(`.smtm-col-base { background-color: ${styles.colBaseHighlight}; }`);
+    styleElement.sheet.insertRule(`.smtm-col-unique { background-color: ${styles.colUniqueHighlight}; }`);
+    styleElement.sheet.insertRule(`.smtm-col-value { background-color: ${styles.colValueHighlight}; }`);
+    styleElement.sheet.insertRule(`.smtm-col-highlight:hover { border: ${styles.highlightBorder}; }`);
 
     // --- State Management ---
     let detectedTables = [];
@@ -59,8 +58,8 @@
         legend.style.cssText = `position: fixed; top: 20px; right: 20px; z-index: 10001; background: #fff; border: 1px solid #ccc; border-radius: 8px; padding: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); font-family: sans-serif; font-size: 14px;`;
         legend.innerHTML = `
             <h4 style="margin: 0 0 10px; padding-bottom: 5px; border-bottom: 1px solid #eee;">SMTM Teach Mode</h4>
-            <div style="display: flex; align-items: center; margin-bottom: 5px;"><span style="width: 20px; height: 20px; background: ${styles.colSelectedUniqueBg}; border-radius: 4px; margin-right: 8px;"></span>Unique Column (ID, Date)</div>
-            <div style="display: flex; align-items: center;"><span style="width: 20px; height: 20px; background: ${styles.colSelectedValueBg}; border-radius: 4px; margin-right: 8px;"></span>Value Column (Amount)</div>
+            <div style="display: flex; align-items: center; margin-bottom: 5px;"><span style="width: 20px; height: 20px; background: ${styles.colUniqueHighlight}; border-radius: 4px; margin-right: 8px;"></span>Unique Column (ID, Date)</div>
+            <div style="display: flex; align-items: center;"><span style="width: 20px; height: 20px; background: ${styles.colValueHighlight}; border-radius: 4px; margin-right: 8px;"></span>Value Column (Amount)</div>
             <p style="margin: 10px 0 0; font-size: 12px; color: #666;">Click a column to select it as <b>${selectionState.currentRole}</b>.</p>`;
         document.body.appendChild(legend);
     }
@@ -82,7 +81,7 @@
                 break;
             } else {
                 let sib = el, nth = 1;
-                while (sib = sib.previousElementSibling) {
+                while ((sib = sib.previousElementSibling)) {
                     if (sib.nodeName.toLowerCase() === selector) nth++;
                 }
                 if (nth !== 1) selector += `:nth-of-type(${nth})`;
@@ -93,22 +92,21 @@
         return path.join(' > ');
     }
 
-    function highlightColumn(tableInfo, colAnalysis) {
-        const { matrix } = tableInfo.normalized;
-        const firstCell = matrix[0]?.[colAnalysis.idx]?.element;
+    function highlightColumn(tableInfo, colIndex) {
+        const firstCell = tableInfo.normalized.matrix[0]?.[colIndex]?.element;
         if (!firstCell) return;
 
         const rect = firstCell.getBoundingClientRect();
         const tableRect = tableInfo.element.getBoundingClientRect();
 
         const highlight = document.createElement('div');
-        highlight.className = `smtm-col-highlight smtm-col-${colAnalysis.classification}`;
+        highlight.className = 'smtm-col-highlight smtm-col-base';
         highlight.style.left = `${rect.left + window.scrollX}px`;
         highlight.style.top = `${tableRect.top + window.scrollY}px`;
         highlight.style.width = `${rect.width}px`;
         highlight.style.height = `${tableRect.height}px`;
         highlight.dataset.tableId = tableInfo.id;
-        highlight.dataset.colIndex = colAnalysis.idx;
+        highlight.dataset.colIndex = colIndex;
 
         overlayContainer.appendChild(highlight);
     }
@@ -121,14 +119,23 @@
         const role = selectionState.currentRole;
         if (!role) return;
 
-        selectionState[role] = { tableId, colIndex };
+        // Clear previous selection for this role
+        if (selectionState[role]) {
+            const prevSelection = selectionState[role];
+            const prevEl = document.querySelector(`.smtm-col-highlight[data-table-id="${prevSelection.tableId}"][data-col-index="${prevSelection.colIndex}"]`);
+            if (prevEl) {
+                prevEl.classList.remove(`smtm-col-${role}`);
+                prevEl.classList.add('smtm-col-base');
+            }
+        }
         
-        // Clear previous selections of this role and apply new class
-        document.querySelectorAll(`.smtm-col-selected-${role}`).forEach(el => el.classList.remove(`smtm-col-selected-${role}`));
-        target.classList.add(`smtm-col-selected-${role}`);
+        // Update state and apply new class
+        selectionState[role] = { tableId, colIndex };
+        target.classList.remove('smtm-col-base');
+        target.classList.add(`smtm-col-${role}`);
         
         const tableInfo = detectedTables.find(t => t.id === tableId);
-        console.log(`[SMTM] Column fixed: role=${role}, header="${tableInfo.normalized.headers[colIndex]?.text}"`);
+        console.log(`[SMTM] Column selected: role=${role}, header="${tableInfo.normalized.headers[colIndex]?.text}"`);
         
         selectionState.currentRole = (role === 'unique') ? 'value' : null;
         updateLegend();
@@ -155,8 +162,9 @@
             outline.style.height = `${rect.height}px`;
             overlayContainer.appendChild(outline);
 
-            const columnAnalyses = window.SMTM.tableParser.analyzeColumns(normalized);
-            columnAnalyses.forEach(analysis => highlightColumn(tableInfo, analysis));
+            for (let i = 0; i < normalized.colCount; i++) {
+                highlightColumn(tableInfo, i);
+            }
         });
     }
 
@@ -166,30 +174,36 @@
         const getMappingData = (role) => {
             const selection = selectionState[role];
             const info = detectedTables.find(t => t.id === selection.tableId);
-            const colIdx = selection.colIndex;
-            const header = info.normalized.headers.find(h => h.index == colIdx);
-            const cell = info.normalized.matrix[1]?.[colIdx]?.element;
-            const { raw } = window.SMTM.tableParser.cleanCellContent(cell);
+            const colIdx = parseInt(selection.colIndex, 10);
+            
+            // Find a representative cell for selector (e.g., first data row)
+            const cell = info.normalized.matrix[0]?.[colIdx]?.element;
+            if (!cell) {
+                console.error(`[SMTM] Could not find cell for role ${role}`);
+                return null;
+            }
 
             return {
                 selector: getCssSelector(cell),
-                headerSelector: getCssSelector(header?.element),
                 role: role,
-                type: window.SMTM.tableParser.analyzeColumns(info.normalized).find(c => c.idx == colIdx).type,
-                sample: [raw],
+                type: window.SMTM.tableParser.analyzeColumns(info.normalized).find(c => c.idx == colIdx)?.type || 'unknown',
                 createdAt: new Date().toISOString(),
-                version: CURRENT_VERSION
             };
         };
 
         try {
             const localConfig = JSON.parse(window.localStorage.getItem(SMTM_LOCAL_CONFIG_KEY));
-            localConfig.mapping = {
-                unique: getMappingData('unique'),
-                value: getMappingData('value')
-            };
-            window.localStorage.setItem(SMTM_LOCAL_CONFIG_KEY, JSON.stringify(localConfig));
-            console.log('[SMTM] New mapping saved:', localConfig.mapping);
+            const uniqueMapping = getMappingData('unique');
+            const valueMapping = getMappingData('value');
+
+            if (uniqueMapping && valueMapping) {
+                localConfig.mapping = {
+                    unique: uniqueMapping,
+                    value: valueMapping
+                };
+                window.localStorage.setItem(SMTM_LOCAL_CONFIG_KEY, JSON.stringify(localConfig));
+                console.log('[SMTM] New mapping saved:', localConfig.mapping);
+            }
         } catch (error) {
             console.error('[SMTM] Error saving mapping:', error);
         }

@@ -26,6 +26,9 @@ async function initMenu() {
     
     // Setup theme
     setupTheme();
+
+    // Setup reset button
+    setupResetButton();
   } catch (error) {
     console.error('Error initializing menu:', error);
   }
@@ -70,13 +73,10 @@ function buildMenu() {
       </div>
     </div>
 
-    <!-- Reset Buttons Section -->
+    <!-- Reset Section -->
     <div class="menu-section" data-section="reset">
       <div class="section-row">
-        <div class="button-group" style="width: 100%;">
-          <button class="menu-button">Reset Stats</button>
-          <button class="menu-button">Reset Mapping</button>
-        </div>
+        <button class="menu-button" data-action="reset-data" style="width: 100%;">Reset</button>
       </div>
     </div>
 
@@ -329,6 +329,100 @@ function toggleExpand(sectionId) {
     content.classList.add('open');
     iconButton.classList.add('expanded');
   }
+}
+
+// Function to be injected into the page to interact with localStorage
+function manageLocalStorage(action) {
+  if (action === 'check') {
+    return !!(localStorage.getItem('smtmLocalConfig') || localStorage.getItem('smtmUsageDaily'));
+  } else if (action === 'clear') {
+    localStorage.clear();
+    return true;
+  }
+  return false;
+}
+
+// Setup reset button logic
+function setupResetButton() {
+  const resetButton = document.querySelector('[data-action="reset-data"]');
+  if (!resetButton) return;
+
+  // Enable the button by default
+  resetButton.disabled = false;
+  applyButtonStyles();
+
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    let hostname = 'current site';
+    const tab = tabs && tabs.length > 0 ? tabs[0] : null;
+
+    if (tab && tab.url) {
+      try {
+        const url = new URL(tab.url);
+        if (['http:', 'https:'].includes(url.protocol)) {
+          hostname = url.hostname.replace(/^www\./, '');
+        } else {
+          console.log('[SMTM] Hostname not found (non-HTTP protocol) — fallback label applied.');
+        }
+      } catch (e) {
+        console.log('[SMTM] Hostname not found (URL parse error) — fallback label applied.');
+      }
+    } else {
+      console.log('[SMTM] Hostname not found (no active tab) — fallback label applied.');
+    }
+
+    resetButton.textContent = `Reset: ${hostname}`;
+
+    resetButton.addEventListener('click', () => {
+      if (!tab || !tab.id) {
+        alert('Reset failed: Could not identify the active tab.');
+        return;
+      }
+      
+      if (hostname === 'cursor.com') {
+        console.log('[SMTM] Cursor preset detected — reset skipped.');
+        return;
+      }
+
+      const confirmation = confirm(`⚠️ This will permanently delete all local data for ${hostname}. Continue?`);
+      if (!confirmation) return;
+
+      // 1. Try to clear localStorage directly via scripting
+      chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: manageLocalStorage,
+        args: ['check']
+      }, (injectionResults) => {
+        // Check if script execution was successful and if data was found
+        if (injectionResults && injectionResults[0] && injectionResults[0].result) {
+          // Data exists, proceed to clear it directly
+          chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: manageLocalStorage,
+            args: ['clear']
+          }, () => {
+            console.log('[SMTM] 🧹 Local data manually cleared (content script not active).');
+            console.log(`[SMTM] 💥 Full data reset completed for ${hostname}.`);
+            resetButton.textContent = 'Reset Complete!';
+            resetButton.disabled = true;
+            applyButtonStyles();
+          });
+        } else {
+          // 2. Fallback: No data found or script failed, try sending message to content script
+          chrome.tabs.sendMessage(tab.id, { action: "clearLocalStorage" }, (response) => {
+            if (chrome.runtime.lastError) {
+              console.log('[SMTM] Reset skipped: extension not available on this page.');
+              alert('Reset failed: extension not active and no local data found.');
+            } else {
+              console.log(`[SMTM] 💥 Full data reset completed for ${hostname}.`);
+              resetButton.textContent = 'Reset Complete!';
+              resetButton.disabled = true;
+              applyButtonStyles();
+            }
+          });
+        }
+      });
+    });
+  });
 }
 
 // Initialize when DOM is ready

@@ -6,8 +6,7 @@
   "content_scripts": [
     {
       "matches": [
-        "https://cursor.com/*",
-        "https://www.cursor.com/*"
+        "<all_urls>"
       ],
       "js": [
         "content.js",
@@ -15,11 +14,12 @@
         "utils/storage.js",
         "utils/dateHelpers.js",
         "utils/uiHelpers.js"
-      ]
+      ],
+      "run_at": "document_idle"
     }
   ],
   "host_permissions": [
-    "https://*/*"
+    "<all_urls>"
   ],
   "background": {
     "service_worker": "background.js"

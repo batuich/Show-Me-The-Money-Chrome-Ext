@@ -60,6 +60,35 @@ async function loadThemes() {
 }
 
 async function init() {
+  // === HARD LOCALSTORAGE CHECK — DO NOTHING IF NO SMTM DATA ===
+  try {
+    const cfgRaw = localStorage.getItem('smtmLocalConfig');
+    const usageRaw = localStorage.getItem('smtmUsageDaily');
+
+    let hasMapping = false;
+    if (cfgRaw) {
+      try {
+        const parsed = JSON.parse(cfgRaw);
+        hasMapping = parsed?.mapping && Object.keys(parsed.mapping).length > 0;
+      } catch (e) {
+        console.warn('[SMTM] ⚠️ Invalid localStorage config JSON, skipping initialization.');
+      }
+    }
+
+    const noData =
+      (!cfgRaw || cfgRaw === '{}' || !hasMapping) &&
+      (!usageRaw || usageRaw === '{}' || usageRaw === null);
+
+    if (noData) {
+      console.log('[SMTM] 💤 No SMTM data in localStorage — skipping all initialization.');
+      return; // 🔥 полностью останавливаем выполнение init()
+    }
+  } catch (err) {
+    console.error('[SMTM] LocalStorage access failed, aborting extension execution.', err);
+    return; // fail-safe
+  }
+  // === END HARD CHECK ===
+
   window.SMTM.debug.group('Script Initialization');
   window.SMTM.debug.log('Timestamp:', new Date().toISOString());
   window.SMTM.debug.log('document.readyState:', document.readyState);
@@ -634,12 +663,39 @@ function blinkDebugBadge() {
     init();
   }
 
-  // Listen for theme changes from the popup menu
+  // Listen for messages from the popup menu
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "applyTheme" && request.theme) {
       window.SMTM.debug.log(`🎨 Received theme update: ${request.theme}`);
       applyPanelTheme(request.theme);
       sendResponse({ status: "theme applied" });
+    } else if (request.action === "clearLocalStorage") {
+      try {
+        window.SMTM.debug.log('💥 Received request to clear all local data.');
+        
+        // Perform a full clear of localStorage for the current origin
+        window.localStorage.clear();
+        
+        // Reset any in-memory state
+        if (window.SMTM) {
+          // Preserve debug functions and themes if they exist
+          const debugBackup = window.SMTM.debug;
+          const themesBackup = window.SMTM.themes;
+          window.SMTM = {};
+          window.SMTM.debug = debugBackup;
+          window.SMTM.themes = themesBackup;
+        }
+        
+        console.log('[SMTM] 💥 Full data reset completed.');
+        sendResponse({ status: "success", message: "Local storage cleared." });
+
+        // Optional: Reload the page to reflect the cleared state
+        // window.location.reload();
+
+      } catch (error) {
+        console.error('[SMTM] Error clearing local storage:', error);
+        sendResponse({ status: "error", message: error.message });
+      }
     }
     return true; // Keep channel open for async responses
   });

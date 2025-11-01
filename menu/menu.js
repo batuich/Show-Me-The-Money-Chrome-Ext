@@ -24,8 +24,8 @@ async function initMenu() {
     // Setup event listeners
     setupEventListeners();
     
-    // Setup theme
-    setupTheme();
+    // Setup theme state
+    setupThemeState();
 
     // Setup reset button
     setupResetButton();
@@ -45,7 +45,7 @@ function buildMenu() {
         <span class="section-title">Theme</span>
         <div class="toggle-group">
           <button class="menu-button" data-theme="light">Light</button>
-          <button class="menu-button active" data-theme="dark">Dark</button>
+          <button class="menu-button" data-theme="dark">Dark</button>
         </div>
       </div>
     </div>
@@ -110,62 +110,44 @@ function applyThemeStyles() {
   
   // Apply menu styles
   if (menu) {
-    container.style.background = menu.background;
-    container.style.padding = menu.padding;
-    container.style.borderRadius = menu.borderRadius;
+    Object.assign(container.style, menu);
   }
   
   // Apply section styles
   if (section) {
     const sections = document.querySelectorAll('.menu-section');
     sections.forEach((sec, index) => {
-      sec.style.background = section.background;
-      sec.style.padding = section.padding;
-      sec.style.display = 'flex';
-      sec.style.flexDirection = 'column';
-      sec.style.gap = section.gap;
-      
-      // Apply border-top except for first child
-      if (index === 0 && section.firstChildBorder) {
-        sec.style.borderTop = section.firstChildBorder;
-      } else if (section.borderTop) {
-        sec.style.borderTop = section.borderTop;
-      }
+      Object.assign(sec.style, {
+        background: section.background,
+        padding: section.padding,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: section.gap,
+        borderTop: (index === 0 && section.firstChildBorder) ? section.firstChildBorder : section.borderTop
+      });
     });
   }
   
   // Apply title styles
   if (title) {
-    const titles = document.querySelectorAll('.section-title');
-    titles.forEach(t => {
-      t.style.color = title.color;
-      t.style.fontSize = title.fontSize;
-      t.style.padding = title.padding;
-    });
+    document.querySelectorAll('.section-title').forEach(t => Object.assign(t.style, title));
   }
   
   // Apply icon button styles
   if (iconButton) {
-    const buttons = document.querySelectorAll('.icon-button');
-    buttons.forEach(btn => {
-      btn.style.background = iconButton.background;
-      btn.style.borderRadius = iconButton.borderRadius;
-      btn.style.padding = iconButton.padding;
-      btn.style.display = iconButton.display;
-      btn.style.alignItems = iconButton.alignItems;
-      btn.style.justifyContent = iconButton.justifyContent;
-    });
+    document.querySelectorAll('.icon-button').forEach(btn => Object.assign(btn.style, iconButton));
   }
   
   // Apply expand content styles
   if (expandContent) {
-    const expandInners = document.querySelectorAll('.expand-inner');
-    expandInners.forEach(inner => {
-      inner.style.color = expandContent.color;
-      inner.style.fontSize = expandContent.fontSize;
-      inner.style.padding = expandContent.padding;
-      inner.style.gap = expandContent.gap;
-      inner.style.lineHeight = expandContent.lineHeight;
+    document.querySelectorAll('.expand-inner').forEach(inner => {
+      Object.assign(inner.style, {
+        color: expandContent.color,
+        fontSize: expandContent.fontSize,
+        padding: expandContent.padding,
+        gap: expandContent.gap,
+        lineHeight: expandContent.lineHeight
+      });
     });
   }
 
@@ -181,24 +163,18 @@ function applyButtonStyles() {
   const { button, buttonHover, buttonActive, buttonDisabled } = themeConfig;
 
   buttons.forEach(btn => {
-    // Apply base styles
     Object.assign(btn.style, button);
 
-    // Hover and active states
-    btn.addEventListener('mouseenter', () => {
-      Object.assign(btn.style, buttonHover);
-    });
+    btn.addEventListener('mouseenter', () => Object.assign(btn.style, buttonHover));
     btn.addEventListener('mouseleave', () => {
-      Object.assign(btn.style, button); // Revert to base
+      Object.assign(btn.style, button);
+      if (btn.classList.contains('active')) {
+        Object.assign(btn.style, buttonActive);
+      }
     });
-    btn.addEventListener('mousedown', () => {
-      Object.assign(btn.style, buttonActive);
-    });
-    btn.addEventListener('mouseup', () => {
-      Object.assign(btn.style, buttonHover); // Revert to hover
-    });
+    btn.addEventListener('mousedown', () => Object.assign(btn.style, buttonActive));
+    btn.addEventListener('mouseup', () => Object.assign(btn.style, buttonHover));
 
-    // Handle disabled state
     if (btn.disabled) {
       Object.assign(btn.style, buttonDisabled);
     }
@@ -212,27 +188,21 @@ function setupEventListeners() {
   themeButtons.forEach(button => {
     button.addEventListener('click', (e) => {
       const selectedTheme = e.currentTarget.getAttribute('data-theme');
+      console.log(`[SMTM] Theme switched to: ${selectedTheme}`);
       
-      // Update active button
-      themeButtons.forEach(btn => btn.classList.remove('active'));
-      e.currentTarget.classList.add('active');
-      
-      // Save to chrome.storage.local
-      chrome.storage.local.set({ smtmPanelTheme: selectedTheme });
+      localStorage.setItem('smtmSelectedTheme', selectedTheme);
 
-      // Notify content script to update theme
+      themeButtons.forEach(btn => {
+        btn.classList.remove('active');
+        Object.assign(btn.style, themeConfig.button);
+      });
+      e.currentTarget.classList.add('active');
+      Object.assign(e.currentTarget.style, themeConfig.buttonActive);
+      
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         if (tabs[0] && tabs[0].id) {
           chrome.tabs.sendMessage(tabs[0].id, { action: "applyTheme", theme: selectedTheme }, (response) => {
-            if (chrome.runtime.lastError) {
-              const errorMessage = chrome.runtime.lastError.message;
-              // This error is expected if the content script is not yet injected
-              if (errorMessage.includes('Receiving end does not exist')) {
-                console.log('Content script not ready yet, or not on a supported page.');
-              } else {
-                console.error('Error sending message to content script:', errorMessage);
-              }
-            }
+            if (chrome.runtime.lastError) { /* Suppress error */ }
           });
         }
       });
@@ -240,11 +210,9 @@ function setupEventListeners() {
   });
 
   // Expandable sections
-  const expandTriggers = document.querySelectorAll('[data-expand]');
-  expandTriggers.forEach(trigger => {
+  document.querySelectorAll('[data-expand]').forEach(trigger => {
     trigger.addEventListener('click', (e) => {
-      const targetId = e.currentTarget.getAttribute('data-expand');
-      toggleExpand(targetId);
+      toggleExpand(e.currentTarget.getAttribute('data-expand'));
     });
   });
 
@@ -252,14 +220,11 @@ function setupEventListeners() {
   const teachModeButton = document.querySelector('[data-section="teach-mode"] .menu-button');
   if (teachModeButton) {
     teachModeButton.addEventListener('click', () => {
-      console.log('Popup: "Start detection" button clicked. Sending message to background.');
       chrome.runtime.sendMessage({ action: "startTeachMode" }, (response) => {
         if (chrome.runtime.lastError) {
           console.error('Popup: Error sending message:', chrome.runtime.lastError.message);
-        } else {
-          console.log('Popup: Message sent successfully, response:', response);
         }
-        window.close(); // Close the popup after sending the message
+        window.close();
       });
     });
   }
@@ -269,66 +234,38 @@ function setupEventListeners() {
 function toggleExpand(sectionId) {
   const content = document.querySelector(`[data-content="${sectionId}"]`);
   const iconButton = document.querySelector(`.icon-button[data-expand="${sectionId}"]`);
-  
   if (!content || !iconButton) return;
   
-  const isOpen = content.classList.contains('open');
-  
-  if (isOpen) {
-    // Close
-    content.classList.remove('open');
-    iconButton.classList.remove('expanded');
-  } else {
-    // Open
-    content.classList.add('open');
-    iconButton.classList.add('expanded');
-  }
+  const isOpen = content.classList.toggle('open');
+  iconButton.classList.toggle('expanded', isOpen);
 }
 
 // Setup theme state
-function setupTheme() {
-  const lightButton = document.querySelector('[data-theme="light"]');
-  const darkButton = document.querySelector('[data-theme="dark"]');
+function setupThemeState() {
+  let currentTheme = localStorage.getItem('smtmSelectedTheme');
+  if (!currentTheme) {
+    currentTheme = 'light';
+    localStorage.setItem('smtmSelectedTheme', 'light');
+  }
 
-  chrome.storage.local.get('smtmPanelTheme', (result) => {
-    const currentTheme = result.smtmPanelTheme;
-
-    if (!currentTheme) {
-      // On first launch, set theme to 'light' but display 'dark' as active
-      chrome.storage.local.set({ smtmPanelTheme: 'light' });
-      darkButton.classList.add('active');
-      lightButton.classList.remove('active');
-    } else {
-      // On subsequent launches, reflect the saved theme
-      if (currentTheme === 'light') {
-        lightButton.classList.add('active');
-        darkButton.classList.remove('active');
-      } else {
-        darkButton.classList.add('active');
-        lightButton.classList.remove('active');
+  const themeButtons = document.querySelectorAll('[data-section="theme"] .menu-button');
+  themeButtons.forEach(btn => {
+    if (btn.dataset.theme === currentTheme) {
+      btn.classList.add('active');
+      if (themeConfig && themeConfig.buttonActive) {
+        Object.assign(btn.style, themeConfig.buttonActive);
       }
     }
   });
-}
 
-// Toggle expand/collapse for sections
-function toggleExpand(sectionId) {
-  const content = document.querySelector(`[data-content="${sectionId}"]`);
-  const iconButton = document.querySelector(`.icon-button[data-expand="${sectionId}"]`);
-  
-  if (!content || !iconButton) return;
-  
-  const isOpen = content.classList.contains('open');
-  
-  if (isOpen) {
-    // Close
-    content.classList.remove('open');
-    iconButton.classList.remove('expanded');
-  } else {
-    // Open
-    content.classList.add('open');
-    iconButton.classList.add('expanded');
-  }
+  // Inform content script about the current theme on init
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (tabs[0] && tabs[0].id) {
+      chrome.tabs.sendMessage(tabs[0].id, { action: "applyTheme", theme: currentTheme }, (response) => {
+        if (chrome.runtime.lastError) { /* Suppress error */ }
+      });
+    }
+  });
 }
 
 // Function to be injected into the page to interact with localStorage
@@ -347,9 +284,10 @@ function setupResetButton() {
   const resetButton = document.querySelector('[data-action="reset-data"]');
   if (!resetButton) return;
 
-  // Enable the button by default
   resetButton.disabled = false;
-  applyButtonStyles();
+  if (themeConfig && themeConfig.button) {
+    Object.assign(resetButton.style, themeConfig.button);
+  }
 
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     let hostname = 'current site';

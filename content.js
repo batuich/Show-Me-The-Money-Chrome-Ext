@@ -109,10 +109,10 @@ async function init() {
   // Restore and apply panel theme from storage. We use chrome.storage.local
   // as it's the correct way for extensions to persist and share data.
   try {
-    chrome.storage.local.get('smtmPanelTheme', (result) => {
+    chrome.storage.local.get('smtmPanelTheme', async (result) => {
       const themeName = result.smtmPanelTheme || 'light'; // Default to 'light'
       window.SMTM.debug.log(`Restoring panel theme: ${themeName}`);
-      applyPanelTheme(themeName);
+      await applyPanelTheme(themeName);
     });
   } catch (e) {
     console.error('[SMTM] Error reading theme from storage:', e);
@@ -667,8 +667,9 @@ function blinkDebugBadge() {
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "applyTheme" && request.theme) {
       window.SMTM.debug.log(`🎨 Received theme update: ${request.theme}`);
-      applyPanelTheme(request.theme);
-      sendResponse({ status: "theme applied" });
+      applyPanelTheme(request.theme).then(() => {
+        sendResponse({ status: "theme applied" });
+      });
     } else if (request.action === "clearLocalStorage") {
       try {
         window.SMTM.debug.log('💥 Received request to clear all local data.');
@@ -702,16 +703,23 @@ function blinkDebugBadge() {
 
   /**
    * Applies a named theme to the SMTM panel by injecting a style block.
+   * This function is "lazy" and will do nothing if the panel is not found in the DOM.
    * @param {string} themeName - The name of the theme to apply (e.g., 'light', 'dark').
    */
-  function applyPanelTheme(themeName) {
+  async function applyPanelTheme(themeName) {
     if (!themeName) {
-      window.SMTM.debug.log('⚠️ applyPanelTheme called with no themeName, defaulting to "light"');
-      themeName = 'light';
+      themeName = 'light'; // Default to light theme
     }
 
+    const panel = document.querySelector('#smtm-panel');
+    // Silently exit if the panel does not exist.
+    if (!panel) {
+      return;
+    }
+
+    // Themes should be loaded by this point, but we check just in case.
     if (!window.SMTM.themes || !window.SMTM.themes.panelThemes) {
-      console.error('[SMTM] Panel themes not loaded.');
+      console.error('[SMTM] Panel themes not loaded. Cannot apply theme.');
       return;
     }
 
@@ -721,15 +729,6 @@ function blinkDebugBadge() {
       return;
     }
 
-    const panel = document.querySelector('#smtm-panel');
-    if (!panel) {
-      window.SMTM.debug.log('Panel not found in DOM, cannot apply theme yet. Retrying...');
-      setTimeout(() => applyPanelTheme(themeName), 500);
-      return;
-    }
-    
-    window.SMTM.debug.log(`Applying panel theme: ${themeName}`, themeConfig);
-
     const styleId = 'smtm-panel-theme-styles';
     let styleElement = document.getElementById(styleId);
     if (!styleElement) {
@@ -738,32 +737,32 @@ function blinkDebugBadge() {
       document.head.appendChild(styleElement);
     }
 
-    // Generate CSS from the theme configuration.
+    // Generate CSS from the theme configuration, using correct keys.
     const css = `
       #smtm-panel {
-        background: ${themeConfig.panelBackground} !important;
-        color: ${themeConfig.panelTextColor} !important;
-        border: ${themeConfig.panelBorder} !important;
-        box-shadow: ${themeConfig.panelShadow} !important;
+        background: ${themeConfig.panel.default.backgroundColor} !important;
+        color: ${themeConfig.panel.default.color} !important;
+        border: ${themeConfig.panel.default.border} !important;
+        border-radius: ${themeConfig.panel.default.borderRadius}px !important;
       }
       #smtm-panel .total-value {
-        color: ${themeConfig.accentColor} !important;
+        color: ${themeConfig.totalValue.default.color} !important;
       }
       #smtm-panel button {
-        background: ${themeConfig.buttonBackground} !important;
-        color: ${themeConfig.buttonTextColor} !important;
+        background: ${themeConfig.button.default.backgroundColor} !important;
+        color: ${themeConfig.button.default.color} !important;
         border: none !important;
       }
       #smtm-panel button.active, #smtm-panel button:hover {
-        background: ${themeConfig.buttonActiveBackground} !important;
+        background: ${themeConfig.button.hover.backgroundColor} !important;
       }
       #smtm-panel .total-label {
-        color: ${themeConfig.panelTextColor} !important;
+        color: ${themeConfig.totalLabel.default.color} !important;
       }
     `;
     
     styleElement.textContent = css;
-    window.SMTM.debug.log('Applied panel theme styles.');
+    console.log(`[SMTM] Panel theme applied: ${themeName}`);
   }
 
 })(); // End of IIFE

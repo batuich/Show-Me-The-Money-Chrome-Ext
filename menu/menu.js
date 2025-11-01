@@ -225,7 +225,13 @@ function setupEventListeners() {
         if (tabs[0] && tabs[0].id) {
           chrome.tabs.sendMessage(tabs[0].id, { action: "applyTheme", theme: selectedTheme }, (response) => {
             if (chrome.runtime.lastError) {
-              console.error('Error sending message to content script:', chrome.runtime.lastError.message);
+              const errorMessage = chrome.runtime.lastError.message;
+              // This error is expected if the content script is not yet injected
+              if (errorMessage.includes('Receiving end does not exist')) {
+                console.log('Content script not ready yet, or not on a supported page.');
+              } else {
+                console.error('Error sending message to content script:', errorMessage);
+              }
             }
           });
         }

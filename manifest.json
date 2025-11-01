@@ -44,6 +44,8 @@
       "resources": [
         "themes.json",
         "teachMode.js",
+        "teachTooltip.js",
+        "teachTooltip.css",
         "utils/tableParser.js"
       ],
       "matches": [

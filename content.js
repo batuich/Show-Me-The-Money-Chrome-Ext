@@ -711,6 +711,8 @@ function blinkDebugBadge() {
       themeName = 'light'; // Default to light theme
     }
 
+    window.SMTM.activeTheme = themeName; // Set active theme globally
+
     const panel = document.querySelector('#smtm-panel');
     // Silently exit if the panel does not exist.
     if (!panel) {

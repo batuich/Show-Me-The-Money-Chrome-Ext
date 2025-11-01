@@ -1,0 +1,58 @@
+.smtm-teach-tooltip {
+    position: fixed;
+    z-index: 99999;
+    background-color: var(--tooltip-background, #fff);
+    color: var(--tooltip-text, #111);
+    border: 1px solid var(--tooltip-border, #e0e0e0);
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 16px;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 0.3s ease-in-out;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.smtm-teach-tooltip.fade-out {
+    opacity: 0;
+}
+
+.smtm-teach-tooltip-title {
+    padding: 6px 8px 4px 8px;
+    font-weight: bold;
+    border-bottom: 1px solid var(--tooltip-border, #e0e0e0);
+}
+
+.smtm-teach-tooltip-section {
+    display: flex;
+    align-items: flex-start;
+    padding: 6px 8px;
+}
+
+.smtm-teach-tooltip-section.saved {
+    justify-content: center;
+    font-weight: bold;
+}
+
+.smtm-teach-tooltip-marker {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    margin-right: 8px;
+    margin-top: 3px;
+    flex-shrink: 0;
+}
+
+.smtm-teach-tooltip-marker.unique {
+    background-color: var(--tooltip-accent-unique, #4A90E2);
+}
+
+.smtm-teach-tooltip-marker.value {
+    background-color: var(--tooltip-accent-value, #F5A623);
+}
+
+.smtm-teach-tooltip .hint {
+    color: #888;
+    font-size: 11px;
+    margin-top: 2px;
+}

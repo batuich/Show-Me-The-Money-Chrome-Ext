@@ -4,18 +4,33 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs.length > 0) {
         const tabId = tabs[0].id;
-        console.log(`Background: Injecting teachMode.js into tab ${tabId}`);
-        chrome.scripting.executeScript({
+        console.log(`Background: Injecting Teach Mode assets into tab ${tabId}`);
+
+        // Inject CSS first
+        chrome.scripting.insertCSS({
           target: { tabId: tabId },
-          files: ["utils/tableParser.js", "teachMode.js"]
+          files: ["teachTooltip.css"]
         }, () => {
           if (chrome.runtime.lastError) {
-            console.error('Background: Error injecting script:', chrome.runtime.lastError.message);
-            sendResponse({ status: "error", message: chrome.runtime.lastError.message });
+            console.error('Background: Error injecting CSS:', chrome.runtime.lastError.message);
+            // We can still try to inject JS
           } else {
-            console.log("Background: teachMode.js injected successfully.");
-            sendResponse({ status: "success" });
+            console.log("Background: teachTooltip.css injected successfully.");
           }
+
+          // Then inject JS files
+          chrome.scripting.executeScript({
+            target: { tabId: tabId },
+            files: ["utils/tableParser.js", "teachTooltip.js", "teachMode.js"]
+          }, () => {
+            if (chrome.runtime.lastError) {
+              console.error('Background: Error injecting scripts:', chrome.runtime.lastError.message);
+              sendResponse({ status: "error", message: chrome.runtime.lastError.message });
+            } else {
+              console.log("Background: Scripts injected successfully.");
+              sendResponse({ status: "success" });
+            }
+          });
         });
       } else {
         console.error("Background: No active tab found.");

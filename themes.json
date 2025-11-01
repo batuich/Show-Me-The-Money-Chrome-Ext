@@ -174,7 +174,12 @@
 					"color": "#555555",
 					"fontWeight": 400
 				}
-			}
+			},
+			"tooltipBackground": "#ffffff",
+			"tooltipText": "#111111",
+			"tooltipAccentUnique": "#4A90E2",
+			"tooltipAccentValue": "#F5A623",
+			"tooltipBorder": "#e0e0e0"
 		},
 		"dark": {
 			"panel": {
@@ -227,7 +232,12 @@
 					"color": "#aaaaaa",
 					"fontWeight": 400
 				}
-			}
+			},
+			"tooltipBackground": "#1c1c1c",
+			"tooltipText": "#f2f2f2",
+			"tooltipAccentUnique": "#50E3C2",
+			"tooltipAccentValue": "#F8E71C",
+			"tooltipBorder": "#333333"
 		}
 	}
 }

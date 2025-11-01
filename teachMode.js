@@ -46,28 +46,12 @@
     // --- State Management ---
     let detectedTables = [];
     let selectionState = { currentRole: 'unique', unique: null, value: null };
+    let teachTooltip = null;
 
-    // --- DOM Overlay and Legend ---
+    // --- DOM Overlay ---
     const overlayContainer = document.createElement('div');
     overlayContainer.id = 'smtm-overlay-container';
     document.body.appendChild(overlayContainer);
-
-    function createLegend() {
-        const legend = document.createElement('div');
-        legend.id = 'smtm-legend';
-        legend.style.cssText = `position: fixed; top: 20px; right: 20px; z-index: 10001; background: #fff; border: 1px solid #ccc; border-radius: 8px; padding: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); font-family: sans-serif; font-size: 14px;`;
-        legend.innerHTML = `
-            <h4 style="margin: 0 0 10px; padding-bottom: 5px; border-bottom: 1px solid #eee;">SMTM Teach Mode</h4>
-            <div style="display: flex; align-items: center; margin-bottom: 5px;"><span style="width: 20px; height: 20px; background: ${styles.colUniqueHighlight}; border-radius: 4px; margin-right: 8px;"></span>Unique Column (ID, Date)</div>
-            <div style="display: flex; align-items: center;"><span style="width: 20px; height: 20px; background: ${styles.colValueHighlight}; border-radius: 4px; margin-right: 8px;"></span>Value Column (Amount)</div>
-            <p style="margin: 10px 0 0; font-size: 12px; color: #666;">Click a column to select it as <b>${selectionState.currentRole}</b>.</p>`;
-        document.body.appendChild(legend);
-    }
-
-    function updateLegend() {
-        const p = document.querySelector('#smtm-legend p');
-        if (p) p.innerHTML = selectionState.currentRole ? `Click a column to select it as <b>${selectionState.currentRole}</b>.` : 'Both columns selected. Deactivate to save.';
-    }
 
     // --- Core Logic ---
     function getCssSelector(el) {
@@ -138,10 +122,12 @@
         const tableInfo = detectedTables.find(t => t.id === tableId);
         console.log(`[SMTM] Column selected: role=${role}, header="${tableInfo.normalized.headers[colIndex]?.text}"`);
         
-        selectionState.currentRole = (role === 'unique') ? 'value' : null;
-        updateLegend();
-
-        if (!selectionState.currentRole) {
+        if (role === 'unique') {
+            selectionState.currentRole = 'value';
+            if (teachTooltip) teachTooltip.setState('selectValue');
+        } else {
+            selectionState.currentRole = null;
+            if (teachTooltip) teachTooltip.setState('saved');
             saveMapping();
         }
     }
@@ -241,7 +227,6 @@
 
             if (uniqueEls.length > 0 && valueEls.length > 0) {
                 selectionState.currentRole = null;
-                updateLegend();
                 console.log('[SMTM] Previously saved mapping loaded and applied.');
             }
         } catch (error) {
@@ -254,13 +239,12 @@
         document.removeEventListener('click', handleColumnClick, true);
         if (overlayContainer) overlayContainer.remove();
         if (styleElement) styleElement.remove();
-        const legend = document.getElementById('smtm-legend');
-        if (legend) legend.remove();
+        if (teachTooltip) teachTooltip.destroy();
         console.log('[SMTM] Teach Mode deactivated and cleaned up.');
     }
 
     // --- Activation ---
-    createLegend();
+    teachTooltip = new TeachTooltip();
     analyzeAndHighlight();
     loadAndApplyMapping(); // Apply saved mapping after highlights are created
     document.addEventListener('click', handleColumnClick, true);

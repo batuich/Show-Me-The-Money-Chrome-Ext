@@ -29,6 +29,9 @@ async function initMenu() {
 
     // Setup reset button
     setupResetButton();
+    
+    // Setup Teach Mode button state
+    setupTeachModeButton();
   } catch (error) {
     console.error('Error initializing menu:', error);
   }
@@ -216,18 +219,54 @@ function setupEventListeners() {
     });
   });
 
-  // Teach Mode button
+  // Teach Mode button - listener will be set up in setupTeachModeButton()
+}
+
+// Setup Teach Mode button state and behavior
+function setupTeachModeButton() {
   const teachModeButton = document.querySelector('[data-section="teach-mode"] .menu-button');
-  if (teachModeButton) {
-    teachModeButton.addEventListener('click', () => {
-      chrome.runtime.sendMessage({ action: "startTeachMode" }, (response) => {
-        if (chrome.runtime.lastError) {
-          console.error('Popup: Error sending message:', chrome.runtime.lastError.message);
+  if (!teachModeButton) return;
+  
+  // Get the current page's localStorage to check Teach Mode state
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (!tabs || tabs.length === 0) return;
+    
+    const tabId = tabs[0].id;
+    
+    // Inject script to check teachModeActive flag
+    chrome.scripting.executeScript({
+      target: { tabId: tabId },
+      func: () => {
+        try {
+          const config = JSON.parse(localStorage.getItem('smtmLocalConfig'));
+          return config?.teachModeActive === true;
+        } catch (e) {
+          return false;
         }
-        window.close();
+      }
+    }, (results) => {
+      if (chrome.runtime.lastError) {
+        console.error('Error checking Teach Mode state:', chrome.runtime.lastError.message);
+        return;
+      }
+      
+      const isActive = results && results[0] && results[0].result === true;
+      
+      // Update button text based on state
+      teachModeButton.textContent = isActive ? 'Stop detection' : 'Start detection';
+      
+      // Set up click handler
+      teachModeButton.addEventListener('click', () => {
+        const action = isActive ? 'stopTeachMode' : 'startTeachMode';
+        chrome.runtime.sendMessage({ action: action }, (response) => {
+          if (chrome.runtime.lastError) {
+            console.error('Popup: Error sending message:', chrome.runtime.lastError.message);
+          }
+          window.close();
+        });
       });
     });
-  }
+  });
 }
 
 // Toggle expand/collapse for sections

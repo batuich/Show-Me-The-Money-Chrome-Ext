@@ -1,6 +1,6 @@
 // teachMode.js
 (function() {
-    console.log(`[SMTM] Teach Mode activated on ${window.location.hostname}`);
+    console.log(`[SMTM TeachMode] Started`);
 
     const SMTM_LOCAL_CONFIG_KEY = 'smtmLocalConfig';
     const CURRENT_VERSION = '1.3'; // Updated version for new logic
@@ -12,11 +12,15 @@
             localConfig = {
                 ui: {}, data: {}, mapping: {},
                 createdAt: new Date().toISOString(), version: CURRENT_VERSION,
+                teachModeActive: true
             };
             window.localStorage.setItem(SMTM_LOCAL_CONFIG_KEY, JSON.stringify(localConfig));
         } else {
             // Clear old highlight classes if any exist from a previous session
             document.querySelectorAll('.smtm-col-highlight, .smtm-table-outline').forEach(el => el.remove());
+            // Set teachModeActive flag
+            localConfig.teachModeActive = true;
+            window.localStorage.setItem(SMTM_LOCAL_CONFIG_KEY, JSON.stringify(localConfig));
         }
     } catch (error) {
         console.error('[SMTM] Error accessing localStorage:', error);
@@ -120,7 +124,7 @@
         target.classList.add(`smtm-col-${role}`);
         
         const tableInfo = detectedTables.find(t => t.id === tableId);
-        console.log(`[SMTM] Column selected: role=${role}, header="${tableInfo.normalized.headers[colIndex]?.text}"`);
+        console.log(`[SMTM TeachMode] Column selected: ${role}`);
         
         if (role === 'unique') {
             selectionState.currentRole = 'value';
@@ -191,7 +195,12 @@
                     value: valueMapping
                 };
                 window.localStorage.setItem(SMTM_LOCAL_CONFIG_KEY, JSON.stringify(localConfig));
-                console.log('[SMTM] Mapping saved to localStorage');
+                console.log(`[SMTM TeachMode] Saved mapping for ${window.location.hostname}`);
+                
+                // Trigger automatic cleanup after successful save
+                setTimeout(() => {
+                    endTeachMode();
+                }, 2000); // Wait 2 seconds so user sees the "Saved!" tooltip
             }
         } catch (error) {
             console.error('[SMTM] Error saving mapping:', error);
@@ -234,20 +243,55 @@
         }
     }
 
-    function cleanup() {
-        saveMapping();
+    function endTeachMode() {
+        console.log('[SMTM TeachMode] Exiting — cleaning up highlights...');
+        
+        // Remove event listener
         document.removeEventListener('click', handleColumnClick, true);
-        if (overlayContainer) overlayContainer.remove();
-        if (styleElement) styleElement.remove();
-        if (teachTooltip) teachTooltip.destroy();
-        console.log('[SMTM] Teach Mode deactivated and cleaned up.');
+        
+        // Remove all highlight overlays (check if still in DOM before removal)
+        if (overlayContainer && overlayContainer.parentNode) {
+            overlayContainer.remove();
+        }
+        
+        // Remove any stray highlight elements
+        document.querySelectorAll('.smtm-col-highlight, .smtm-table-outline').forEach(el => {
+            if (el.parentNode) el.remove();
+        });
+        
+        // Remove injected styles
+        if (styleElement && styleElement.parentNode) {
+            styleElement.remove();
+        }
+        
+        // Destroy tooltip
+        if (teachTooltip) {
+            teachTooltip.destroy();
+        }
+        
+        // Update localStorage to mark Teach Mode as inactive
+        try {
+            const localConfig = JSON.parse(window.localStorage.getItem(SMTM_LOCAL_CONFIG_KEY));
+            if (localConfig) {
+                localConfig.teachModeActive = false;
+                window.localStorage.setItem(SMTM_LOCAL_CONFIG_KEY, JSON.stringify(localConfig));
+            }
+        } catch (error) {
+            console.error('[SMTM] Error updating teachModeActive flag:', error);
+        }
+        
+        console.log('[SMTM TeachMode] Exited — highlights cleared');
+        
+        // Trigger sum recalculation if valid mapping exists
+        // This would normally be handled by the main content script
+        // We just need to reload the page or trigger the processing
+        // For now, we'll just log that cleanup is complete
     }
 
     // --- Activation ---
     teachTooltip = new TeachTooltip();
     analyzeAndHighlight();
-    loadAndApplyMapping(); // Apply saved mapping after highlights are created
     document.addEventListener('click', handleColumnClick, true);
 
-    window.SMTM_cleanupTeachMode = cleanup;
+    window.SMTM_cleanupTeachMode = endTeachMode;
 })();

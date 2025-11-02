@@ -197,6 +197,19 @@
                 window.localStorage.setItem(SMTM_LOCAL_CONFIG_KEY, JSON.stringify(localConfig));
                 console.log(`[SMTM TeachMode] Saved mapping for ${window.location.hostname}`);
                 
+                // Dispatch event to trigger banner display
+                window.dispatchEvent(new CustomEvent('smtm-mapping-saved', {
+                    detail: { mapping: localConfig.mapping }
+                }));
+                
+                // Try to show banner directly if available
+                if (window.SMTM?.banner?.showBanner) {
+                    const themeName = window.SMTM.activeTheme || 'light';
+                    setTimeout(() => {
+                        window.SMTM.banner.showBanner(themeName);
+                    }, 2100); // Show banner after teach mode ends
+                }
+                
                 // Trigger automatic cleanup after successful save
                 setTimeout(() => {
                     endTeachMode();

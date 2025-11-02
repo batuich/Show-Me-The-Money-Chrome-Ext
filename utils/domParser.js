@@ -136,6 +136,7 @@ async function parseHtmlTable(tableElement) {
 
     const rowDetails = [];
     let rowIndex = 0;
+    let validCellCount = 0; // Track valid cells that contribute to sum
 
     rows.forEach(row => {
         const cells = row.querySelectorAll('td');
@@ -219,12 +220,15 @@ async function parseHtmlTable(tableElement) {
 
         // Aggregate costs for the same day
         if (!isNaN(amount)) {
+            // Count as valid cell only if amount was successfully parsed and added
             if (dailyCosts[normalizedDate]) {
                 rowInfo.status = '✅ added to existing date';
                 dailyCosts[normalizedDate] += Math.abs(amount);
+                validCellCount++; // Count this as a valid cell
             } else {
                 rowInfo.status = '✅ new date entry';
                 dailyCosts[normalizedDate] = Math.abs(amount);
+                validCellCount++; // Count this as a valid cell
             }
         } else {
             rowInfo.status = '❌ invalid amount (NaN)';
@@ -240,8 +244,14 @@ async function parseHtmlTable(tableElement) {
     group('Final daily costs');
     log('Total unique dates found:', Object.keys(dailyCosts).length);
     log('Total rows parsed:', rows.length);
+    log('Valid cells counted:', validCellCount);
     table(dailyCosts);
     groupEnd();
+
+    // Store cell count in global state
+    if (window.SMTM) {
+        window.SMTM.cellCount = validCellCount;
+    }
 
     groupEnd(); // End parseHtmlTable
     return dailyCosts;

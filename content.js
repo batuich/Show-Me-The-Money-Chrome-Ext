@@ -133,6 +133,41 @@ async function init() {
   
   // Set up scroll listener
   setupScrollListener();
+  
+  // Show banner if valid mapping exists
+  try {
+    chrome.storage.local.get('smtmPanelTheme', (result) => {
+      const themeName = result.smtmPanelTheme || 'light';
+      if (window.SMTM?.banner?.showBanner) {
+        // Small delay to ensure themes are loaded
+        setTimeout(() => {
+          window.SMTM.banner.showBanner(themeName);
+        }, 100);
+      }
+    });
+  } catch (e) {
+    console.error('[SMTM] Error showing banner:', e);
+    if (window.SMTM?.banner?.showBanner) {
+      window.SMTM.banner.showBanner('light');
+    }
+  }
+  
+  // Listen for mapping saved event from Teach Mode
+  window.addEventListener('smtm-mapping-saved', (event) => {
+    window.SMTM.debug.log('📢 Mapping saved event received, showing cursor panel');
+    try {
+      chrome.storage.local.get('smtmPanelTheme', (result) => {
+        const themeName = result.smtmPanelTheme || 'light';
+        if (window.SMTM?.banner?.showBanner) {
+          setTimeout(() => {
+            window.SMTM.banner.showBanner(themeName);
+          }, 2100); // Wait for Teach Mode cleanup
+        }
+      });
+    } catch (e) {
+      console.error('[SMTM] Error showing cursor panel after mapping save:', e);
+    }
+  });
 }
 
 /**
@@ -548,6 +583,12 @@ async function processTransactions() {
   window.SMTM.debug.log('Total dates in storage:', Object.keys(currentData).length);
 
   updateTotalDisplay(); // Initial display with default range
+  
+  // Update cursor panel cell count after parsing
+  if (window.SMTM?.banner?.updateCursorCellCount) {
+    window.SMTM.banner.updateCursorCellCount();
+  }
+  
   window.SMTM.debug.groupEnd();
 }
 
@@ -578,6 +619,11 @@ window.updateTotalDisplay = function(startDate, endDate) {
   const currencySymbol = window.location.hostname.includes('cursor.com') ? '$' : '';
 
   updateTotal(total, currencySymbol);
+  
+  // Update cursor panel total if it exists
+  if (window.SMTM?.banner?.updateCursorTotal) {
+    window.SMTM.banner.updateCursorTotal();
+  }
 
   const theme = window.location.hostname.includes('cursor.com') ? 'cursor' : 'dark';
   const missingDays = checkForMissingDays(history, startDate, endDate);
@@ -668,11 +714,20 @@ function blinkDebugBadge() {
     if (request.action === "applyTheme" && request.theme) {
       window.SMTM.debug.log(`🎨 Received theme update: ${request.theme}`);
       applyPanelTheme(request.theme).then(() => {
+        // Update cursor panel theme
+        if (window.SMTM?.banner?.applyBannerTheme) {
+          window.SMTM.banner.applyBannerTheme(request.theme);
+        }
         sendResponse({ status: "theme applied" });
       });
     } else if (request.action === "clearLocalStorage") {
       try {
         window.SMTM.debug.log('💥 Received request to clear all local data.');
+        
+        // Hide banner before clearing
+        if (window.SMTM?.banner?.hideBanner) {
+          window.SMTM.banner.hideBanner();
+        }
         
         // Perform a full clear of localStorage for the current origin
         window.localStorage.clear();

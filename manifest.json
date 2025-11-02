@@ -13,7 +13,8 @@
         "utils/domParser.js",
         "utils/storage.js",
         "utils/dateHelpers.js",
-        "utils/uiHelpers.js"
+        "utils/uiHelpers.js",
+        "utils/banner.js"
       ],
       "run_at": "document_idle"
     }

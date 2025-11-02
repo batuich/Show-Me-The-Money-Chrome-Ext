@@ -138,3 +138,20 @@ function getPanelPosition() {
 function savePanelPosition(position) {
   localStorage.setItem('panelPosition', JSON.stringify(position));
 }
+
+/**
+ * Retrieves the saved cursor panel position from localStorage.
+ * @returns {Object|null} An object with top and left properties, or null.
+ */
+function getCursorPanelPosition() {
+  const position = localStorage.getItem('cursorPanelPosition');
+  return position ? JSON.parse(position) : null;
+}
+
+/**
+ * Saves the cursor panel position to localStorage.
+ * @param {Object} position An object with top and left properties.
+ */
+function saveCursorPanelPosition(position) {
+  localStorage.setItem('cursorPanelPosition', JSON.stringify(position));
+}

@@ -212,14 +212,14 @@ function createDateRangeButtons(theme) {
     button.innerText = range.label;
     button.dataset.period = range.period;
     
-    // Apply button theme
-    if (typeof applyThemeStyles === 'function' && theme.banner?.button) {
-      applyThemeStyles(button, theme.banner, 'button', 'default');
+    // Apply button theme (using shared button styles)
+    if (typeof applyThemeStyles === 'function' && theme.button) {
+      applyThemeStyles(button, theme, 'button', 'default');
       
       // Set default active state for first button
       if (index === 0) {
         button.classList.add('active');
-        applyThemeStyles(button, theme.banner, 'button', 'active');
+        applyThemeStyles(button, theme, 'button', 'active');
       }
     }
     
@@ -231,14 +231,14 @@ function createDateRangeButtons(theme) {
 
     // Hover effects
     button.addEventListener('mouseenter', () => {
-      if (!button.classList.contains('active') && typeof applyThemeStyles === 'function' && theme.banner?.button) {
-        applyThemeStyles(button, theme.banner, 'button', 'hover');
+      if (!button.classList.contains('active') && typeof applyThemeStyles === 'function' && theme.button) {
+        applyThemeStyles(button, theme, 'button', 'hover');
       }
     });
 
     button.addEventListener('mouseleave', () => {
-      if (!button.classList.contains('active') && typeof applyThemeStyles === 'function' && theme.banner?.button) {
-        applyThemeStyles(button, theme.banner, 'button', 'default');
+      if (!button.classList.contains('active') && typeof applyThemeStyles === 'function' && theme.button) {
+        applyThemeStyles(button, theme, 'button', 'default');
       }
     });
 
@@ -247,14 +247,14 @@ function createDateRangeButtons(theme) {
       // Update active button
       container.querySelectorAll('button').forEach(btn => {
         btn.classList.remove('active');
-        if (typeof applyThemeStyles === 'function' && theme.banner?.button) {
-          applyThemeStyles(btn, theme.banner, 'button', 'default');
+        if (typeof applyThemeStyles === 'function' && theme.button) {
+          applyThemeStyles(btn, theme, 'button', 'default');
         }
       });
       
       button.classList.add('active');
-      if (typeof applyThemeStyles === 'function' && theme.banner?.button) {
-        applyThemeStyles(button, theme.banner, 'button', 'active');
+      if (typeof applyThemeStyles === 'function' && theme.button) {
+        applyThemeStyles(button, theme, 'button', 'active');
       }
 
       // Update selected period and refresh display
@@ -283,8 +283,9 @@ function createCellsCountedText(theme, cellCount) {
   const textElement = document.createElement('span');
   textElement.innerText = `Cells counted: ${cellCount}`;
   
-  if (typeof applyThemeStyles === 'function' && theme.banner?.text) {
-    applyThemeStyles(textElement, theme.banner, 'text', 'default');
+  // Use panel.default for text styling (color, fontSize from panel.default)
+  if (typeof applyThemeStyles === 'function' && theme.panel?.default) {
+    applyThemeStyles(textElement, theme, 'panel', 'default');
   }
   
   return textElement;
@@ -407,9 +408,9 @@ function createCursorPanel(themeName = 'light') {
   const panel = document.createElement('div');
   panel.id = 'smtm-cursor-panel';
   
-  // Apply banner theme
+  // Apply panel theme (using shared panel.default)
   if (typeof applyThemeStyles === 'function') {
-    applyThemeStyles(panel, theme, 'banner', 'default');
+    applyThemeStyles(panel, theme, 'panel', 'default');
   }
   
   // Only positioning and layout styles (no color/background)

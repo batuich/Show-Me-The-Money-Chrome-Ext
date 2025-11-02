@@ -144,6 +144,10 @@
 				"hover": {
 					"backgroundColor": "#dddddd",
 					"color": "#111111"
+				},
+				"active": {
+					"backgroundColor": "#e0e0e0",
+					"color": "#111111"
 				}
 			},
 			"tooltip": {
@@ -180,37 +184,6 @@
 			"tooltipAccentUnique": "#4A90E2",
 			"tooltipAccentValue": "#F5A623",
 			"tooltipBorder": "#e0e0e0",
-			"banner": {
-				"default": {
-					"backgroundColor": "#ffffff",
-					"border": "1px solid #e0e0e0",
-					"color": "#111111",
-					"padding": "8px 16px",
-					"borderRadius": 6,
-					"fontSize": 13
-				},
-				"button": {
-					"default": {
-						"backgroundColor": "#f5f5f5",
-						"color": "#111111",
-						"padding": "6px 10px",
-						"borderRadius": 4
-					},
-					"hover": {
-						"backgroundColor": "#dddddd",
-						"color": "#111111"
-					},
-					"active": {
-						"backgroundColor": "#e0e0e0",
-						"color": "#111111"
-					}
-				},
-				"text": {
-					"color": "#111111",
-					"fontSize": 13,
-					"fontWeight": 400
-				}
-			},
 			"dragHandle": {
 				"default": {
 					"backgroundColor": "#f5f5f5",
@@ -252,6 +225,10 @@
 				"hover": {
 					"backgroundColor": "#444444",
 					"color": "#f2f2f2"
+				},
+				"active": {
+					"backgroundColor": "#333333",
+					"color": "#f2f2f2"
 				}
 			},
 			"tooltip": {
@@ -288,37 +265,6 @@
 			"tooltipAccentUnique": "#50E3C2",
 			"tooltipAccentValue": "#F8E71C",
 			"tooltipBorder": "#333333",
-			"banner": {
-				"default": {
-					"backgroundColor": "#1c1c1c",
-					"border": "1px solid #333333",
-					"color": "#f2f2f2",
-					"padding": "8px 16px",
-					"borderRadius": 6,
-					"fontSize": 13
-				},
-				"button": {
-					"default": {
-						"backgroundColor": "#2a2a2a",
-						"color": "#f2f2f2",
-						"padding": "6px 10px",
-						"borderRadius": 4
-					},
-					"hover": {
-						"backgroundColor": "#444444",
-						"color": "#f2f2f2"
-					},
-					"active": {
-						"backgroundColor": "#333333",
-						"color": "#f2f2f2"
-					}
-				},
-				"text": {
-					"color": "#f2f2f2",
-					"fontSize": 13,
-					"fontWeight": 400
-				}
-			},
 			"dragHandle": {
 				"default": {
 					"backgroundColor": "#2a2a2a",

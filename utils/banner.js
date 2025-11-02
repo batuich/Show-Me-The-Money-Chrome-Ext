@@ -120,13 +120,13 @@ function restoreCursorPanelPosition(panel) {
 }
 
 /**
- * Creates drag handle with three vertical dots
+ * Creates drag handle with SVG icon (matches Cursor structure exactly)
  * @param {Object} theme Theme configuration
  * @returns {HTMLElement} Drag handle element
  */
 function createCursorDragHandle(theme) {
   const handle = document.createElement('div');
-  handle.id = 'smtm-cursor-drag-handle';
+  handle.id = 'smtm-drag-handle';
   
   // Apply theme styles
   if (typeof applyThemeStyles === 'function') {
@@ -142,38 +142,44 @@ function createCursorDragHandle(theme) {
     flexShrink: 0
   });
 
-  // Create three dots container
-  const dotsContainer = document.createElement('div');
-  dotsContainer.style.display = 'flex';
-  dotsContainer.style.flexDirection = 'column';
-  dotsContainer.style.gap = '3px';
-  dotsContainer.style.alignItems = 'center';
+  // Get dot color from theme
+  const dotColor = theme.dragHandleDot?.default?.backgroundColor || '#5D5D5D';
+  const dotColorHover = theme.dragHandleDot?.hover?.backgroundColor || dotColor;
 
-  // Create three dots using theme colors
-  for (let i = 0; i < 3; i++) {
-    const dot = document.createElement('div');
-    dot.style.width = '4px';
-    dot.style.height = '4px';
-    dot.style.borderRadius = '50%';
-    
-    if (typeof applyThemeStyles === 'function') {
-      applyThemeStyles(dot, theme, 'dragHandleDot', 'default');
-    }
-    
-    dotsContainer.appendChild(dot);
-  }
+  // Create SVG inline (matches Cursor structure exactly)
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('width', '6');
+  svg.setAttribute('height', '16');
+  svg.setAttribute('viewBox', '0 0 6 16');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
 
-  handle.appendChild(dotsContainer);
+  // Create three circles
+  const circles = [
+    { cx: 3, cy: 3, r: 1 },
+    { cx: 3, cy: 8, r: 1 },
+    { cx: 3, cy: 13, r: 1 }
+  ];
 
-  // Store dots reference for hover effects
-  const dots = dotsContainer.querySelectorAll('div');
+  circles.forEach(circleData => {
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', circleData.cx.toString());
+    circle.setAttribute('cy', circleData.cy.toString());
+    circle.setAttribute('r', circleData.r.toString());
+    circle.setAttribute('fill', dotColor);
+    circle.classList.add('smtm-drag-dot');
+    svg.appendChild(circle);
+  });
+
+  handle.appendChild(svg);
   
-  // Hover effects
+  // Hover effects - update handle background and dot colors
   handle.onmouseover = () => {
     if (typeof applyThemeStyles === 'function') {
       applyThemeStyles(handle, theme, 'dragHandle', 'hover');
-      dots.forEach(dot => {
-        applyThemeStyles(dot, theme, 'dragHandleDot', 'hover');
+      // Update dot colors on hover
+      handle.querySelectorAll('.smtm-drag-dot').forEach(circle => {
+        circle.setAttribute('fill', dotColorHover);
       });
     }
   };
@@ -181,8 +187,9 @@ function createCursorDragHandle(theme) {
   handle.onmouseout = () => {
     if (typeof applyThemeStyles === 'function') {
       applyThemeStyles(handle, theme, 'dragHandle', 'default');
-      dots.forEach(dot => {
-        applyThemeStyles(dot, theme, 'dragHandleDot', 'default');
+      // Restore default dot colors
+      handle.querySelectorAll('.smtm-drag-dot').forEach(circle => {
+        circle.setAttribute('fill', dotColor);
       });
     }
   };
@@ -274,21 +281,45 @@ function createDateRangeButtons(theme) {
 }
 
 /**
- * Creates cells counted text element
+ * Creates cells counted text element with styled container
  * @param {Object} theme Theme configuration
  * @param {number} cellCount Cell count to display
- * @returns {HTMLElement} Text element
+ * @returns {HTMLElement} Container element with text
  */
 function createCellsCountedText(theme, cellCount) {
+  // Create container with cellsCount style
+  const container = document.createElement('div');
+  
+  // Apply cellsCount theme
+  if (typeof applyThemeStyles === 'function' && theme.cellsCount?.default) {
+    applyThemeStyles(container, theme, 'cellsCount', 'default');
+  }
+  
+  // Layout styles only
+  Object.assign(container.style, {
+    display: 'flex',
+    alignItems: 'center'
+  });
+  
+  // Create text element (no styling, just text)
   const textElement = document.createElement('span');
   textElement.innerText = `Cells counted: ${cellCount}`;
   
-  // Use panel.default for text styling (color, fontSize from panel.default)
-  if (typeof applyThemeStyles === 'function' && theme.panel?.default) {
-    applyThemeStyles(textElement, theme, 'panel', 'default');
+  // Only apply color and fontSize from panel.default (no background, border, padding)
+  if (theme.panel?.default) {
+    const panelStyle = theme.panel.default;
+    if (panelStyle.color) {
+      textElement.style.color = panelStyle.color;
+    }
+    if (panelStyle.fontSize) {
+      const fontSize = typeof panelStyle.fontSize === 'number' ? `${panelStyle.fontSize}px` : panelStyle.fontSize;
+      textElement.style.fontSize = fontSize;
+    }
   }
   
-  return textElement;
+  container.appendChild(textElement);
+  
+  return container;
 }
 
 /**
@@ -372,10 +403,17 @@ function updateCursorCellCount() {
   const panel = document.getElementById('smtm-cursor-panel');
   if (!panel) return;
   
-  const cellsCountedText = panel.querySelector('span');
-  if (cellsCountedText && cellsCountedText.innerText.startsWith('Cells counted:')) {
-    const cellCount = getCellCount();
-    cellsCountedText.innerText = `Cells counted: ${cellCount}`;
+  // Find the cells count container and then the text span inside it
+  const cellsCountContainer = panel.querySelector('div[id*="cells-count"]') || 
+                              Array.from(panel.querySelectorAll('div')).find(div => 
+    div.querySelector('span')?.innerText?.startsWith('Cells counted:'));
+  
+  if (cellsCountContainer) {
+    const cellsCountedText = cellsCountContainer.querySelector('span');
+    if (cellsCountedText) {
+      const cellCount = getCellCount();
+      cellsCountedText.innerText = `Cells counted: ${cellCount}`;
+    }
   }
 }
 

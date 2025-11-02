@@ -47,7 +47,8 @@
         "teachMode.js",
         "teachTooltip.js",
         "teachTooltip.css",
-        "utils/tableParser.js"
+        "utils/tableParser.js",
+        "assets/icons/3dot.svg"
       ],
       "matches": [
         "<all_urls>"

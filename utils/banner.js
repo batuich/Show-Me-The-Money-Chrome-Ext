@@ -71,18 +71,61 @@ function getCellCount() {
  */
 function makeCursorPanelDraggable(element, handle) {
   let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-  handle.onmousedown = dragMouseDown;
+  let isDragging = false;
+  let mouseMoveHandler, mouseUpHandler;
+
+  // Stop mouseup and mousemove events during dragging (but allow mousedown to initiate drag)
+  const stopDragEvents = (e) => {
+    if (isDragging && (e.type === 'mousemove' || e.type === 'mouseup')) {
+      e.stopImmediatePropagation();
+      e.preventDefault();
+    }
+  };
+
+  // Stop mousemove and mouseup on handle during drag (but not mousedown - we need that)
+  ['mousemove', 'mouseup'].forEach(eventType => {
+    handle.addEventListener(eventType, stopDragEvents, true);
+    handle.addEventListener(eventType, stopDragEvents, false);
+  });
+
+  // Stop events on the panel element during dragging
+  ['mousemove', 'mouseup'].forEach(eventType => {
+    element.addEventListener(eventType, stopDragEvents, true);
+    element.addEventListener(eventType, stopDragEvents, false);
+  });
 
   function dragMouseDown(e) {
     e.preventDefault();
+    e.stopImmediatePropagation(); // Stop jQuery from seeing this mousedown
+    isDragging = true;
     pos3 = e.clientX;
     pos4 = e.clientY;
-    document.onmouseup = closeDragElement;
-    document.onmousemove = elementDrag;
+    
+    mouseMoveHandler = (moveE) => {
+      moveE.preventDefault();
+      moveE.stopImmediatePropagation(); // Stop ALL handlers including jQuery
+      elementDrag(moveE);
+    };
+    
+    mouseUpHandler = (upE) => {
+      upE.preventDefault();
+      upE.stopImmediatePropagation(); // Stop ALL handlers including jQuery
+      isDragging = false;
+      closeDragElement(upE);
+      document.removeEventListener('mousemove', mouseMoveHandler, true);
+      document.removeEventListener('mouseup', mouseUpHandler, true);
+      mouseMoveHandler = null;
+      mouseUpHandler = null;
+    };
+    
+    // Use capture phase with highest priority (capture happens first)
+    document.addEventListener('mousemove', mouseMoveHandler, true);
+    document.addEventListener('mouseup', mouseUpHandler, true);
   }
 
   function elementDrag(e) {
     e.preventDefault();
+    e.stopImmediatePropagation();
     pos1 = pos3 - e.clientX;
     pos2 = pos4 - e.clientY;
     pos3 = e.clientX;
@@ -95,11 +138,12 @@ function makeCursorPanelDraggable(element, handle) {
     element.style.left = `${newLeft}px`;
   }
 
-  function closeDragElement() {
-    document.onmouseup = null;
-    document.onmousemove = null;
+  function closeDragElement(e) {
     saveCursorPanelPosition({ top: element.style.top, left: element.style.left });
   }
+
+  // Attach mousedown handler with capture phase to run before jQuery
+  handle.addEventListener('mousedown', dragMouseDown, true);
 }
 
 /**
@@ -418,11 +462,80 @@ function updateCursorCellCount() {
 }
 
 /**
+ * Loads themes from themes.json if not already loaded
+ * @returns {Promise<boolean>} True if themes were loaded successfully
+ */
+async function loadThemesIfNeeded() {
+  // Check if themes are already loaded with panelThemes
+  if (window.SMTM?.themes?.panelThemes?.light?.panel?.default && 
+      window.SMTM?.themes?.panelThemes?.dark?.panel?.default) {
+    return true;
+  }
+
+  try {
+    const url = chrome.runtime.getURL('themes.json');
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch themes: ${response.statusText}`);
+    }
+    const themes = await response.json();
+    
+    // Validate structure
+    if (!themes.panelThemes || !themes.panelThemes.light?.panel?.default || !themes.panelThemes.dark?.panel?.default) {
+      console.error('[SMTM Cursor Panel] Invalid themes.json structure - missing panelThemes.light.panel.default or panelThemes.dark.panel.default');
+      return false;
+    }
+    
+    window.SMTM = window.SMTM || {};
+    window.SMTM.themes = themes;
+    console.log('[SMTM Cursor Panel] Themes loaded successfully');
+    return true;
+  } catch (error) {
+    console.error('[SMTM Cursor Panel] Error loading themes:', error);
+    window.SMTM = window.SMTM || {};
+    window.SMTM.themes = window.SMTM.themes || {};
+    return false;
+  }
+}
+
+/**
+ * Waits for themes to be loaded with retry logic
+ * @param {number} maxAttempts - Maximum number of retry attempts
+ * @param {number} delayMs - Delay between attempts in milliseconds
+ * @returns {Promise<boolean>} True if themes are available, false if timeout
+ */
+async function waitForThemes(maxAttempts = 10, delayMs = 200) {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    // Check if themes are loaded with required structure
+    if (window.SMTM?.themes?.panelThemes?.light?.panel?.default && 
+        window.SMTM?.themes?.panelThemes?.dark?.panel?.default) {
+      return true;
+    }
+    
+    // Try to load themes if not loaded
+    if (attempt === 0) {
+      const loaded = await loadThemesIfNeeded();
+      if (loaded) {
+        return true;
+      }
+    }
+    
+    // Wait before next attempt
+    if (attempt < maxAttempts - 1) {
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+  
+  console.error('[SMTM Cursor Panel] Timeout waiting for themes to load');
+  return false;
+}
+
+/**
  * Creates the Cursor-style panel DOM element
  * @param {string} themeName - The active theme name
- * @returns {HTMLElement|null} The panel element or null if creation fails
+ * @returns {Promise<HTMLElement|null>} The panel element or null if creation fails
  */
-function createCursorPanel(themeName = 'light') {
+async function createCursorPanel(themeName = 'light') {
   if (!hasValidMapping()) {
     return null;
   }
@@ -431,6 +544,13 @@ function createCursorPanel(themeName = 'light') {
   const existingPanel = document.getElementById('smtm-cursor-panel');
   if (existingPanel) {
     return existingPanel;
+  }
+  
+  // Wait for themes to be loaded
+  const themesReady = await waitForThemes();
+  if (!themesReady) {
+    console.error('[SMTM Cursor Panel] Themes not available, cannot create panel');
+    return null;
   }
   
   const themes = window.SMTM?.themes || {};
@@ -446,22 +566,63 @@ function createCursorPanel(themeName = 'light') {
   const panel = document.createElement('div');
   panel.id = 'smtm-cursor-panel';
   
+  // Ensure theme is fully loaded before applying
+  const panelDefault = theme.panel?.default;
+  if (!panelDefault) {
+    console.error('[SMTM Cursor Panel] Theme panel.default not found for:', themeName);
+    console.error('[SMTM Cursor Panel] Available themes:', Object.keys(panelThemes));
+    console.error('[SMTM Cursor Panel] Theme structure:', theme);
+    return null;
+  }
+  
   // Apply panel theme (using shared panel.default)
   if (typeof applyThemeStyles === 'function') {
     applyThemeStyles(panel, theme, 'panel', 'default');
   }
   
-  // Only positioning and layout styles (no color/background)
+  // Apply defensive !important styles to ensure theme is fully applied
+  // This overrides any site CSS that might interfere
+  if (panelDefault.backgroundColor) {
+    panel.style.setProperty('background-color', panelDefault.backgroundColor, 'important');
+  }
+  if (panelDefault.border) {
+    panel.style.setProperty('border', panelDefault.border, 'important');
+  }
+  if (panelDefault.color) {
+    panel.style.setProperty('color', panelDefault.color, 'important');
+  }
+  if (panelDefault.padding) {
+    const paddingValue = typeof panelDefault.padding === 'number' 
+      ? `${panelDefault.padding}px` 
+      : panelDefault.padding;
+    panel.style.setProperty('padding', paddingValue, 'important');
+  }
+  if (panelDefault.borderRadius !== undefined) {
+    const borderRadiusValue = typeof panelDefault.borderRadius === 'number'
+      ? `${panelDefault.borderRadius}px`
+      : panelDefault.borderRadius;
+    panel.style.setProperty('border-radius', borderRadiusValue, 'important');
+  }
+  if (panelDefault.fontSize) {
+    const fontSizeValue = typeof panelDefault.fontSize === 'number'
+      ? `${panelDefault.fontSize}px`
+      : panelDefault.fontSize;
+    panel.style.setProperty('font-size', fontSizeValue, 'important');
+  }
+  
+  // Positioning and layout styles with !important for isolation from site CSS
+  panel.style.setProperty('position', 'fixed', 'important');
+  panel.style.setProperty('z-index', '10000', 'important');
+  panel.style.setProperty('display', 'flex', 'important');
+  panel.style.setProperty('align-items', 'center', 'important');
+  panel.style.setProperty('pointer-events', 'auto', 'important');
+  
+  // Positioning values (no !important needed for these)
   Object.assign(panel.style, {
-    position: 'fixed',
     top: '20px',
     left: '50%',
     transform: 'translateX(-50%)',
-    zIndex: '10000',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    pointerEvents: 'auto'
+    gap: '4px'
   });
   
   // Restore position if saved
@@ -507,16 +668,28 @@ function createCursorPanel(themeName = 'light') {
  * Shows the cursor panel if valid mapping exists
  * @param {string} themeName - The active theme name
  */
-function showCursorPanel(themeName) {
+async function showCursorPanel(themeName) {
   if (!hasValidMapping()) {
     hideCursorPanel();
     return;
   }
   
-  const panel = createCursorPanel(themeName);
+  // Ensure themes are loaded before creating panel
+  const themesReady = await waitForThemes();
+  if (!themesReady) {
+    console.error('[SMTM Cursor Panel] Cannot show panel - themes not available');
+    return;
+  }
+  
+  const panel = await createCursorPanel(themeName);
   if (panel && !document.getElementById('smtm-cursor-panel')) {
     document.body.appendChild(panel);
     console.log('[SMTM Cursor Panel] Panel displayed');
+    
+    // Ensure styles are fully applied after panel is added to DOM
+    requestAnimationFrame(() => {
+      reapplyPanelStyles(panel, themeName);
+    });
   }
 }
 
@@ -535,10 +708,10 @@ function hideCursorPanel() {
  * Updates cursor panel content based on current data
  * @param {string} themeName - The active theme name
  */
-function updateCursorPanelContent(themeName) {
+async function updateCursorPanelContent(themeName) {
   const panel = document.getElementById('smtm-cursor-panel');
   if (!panel) {
-    showCursorPanel(themeName);
+    await showCursorPanel(themeName);
     return;
   }
   
@@ -551,19 +724,93 @@ function updateCursorPanelContent(themeName) {
  * Applies theme styles to the cursor panel
  * @param {string} themeName - The active theme name
  */
-function applyCursorPanelTheme(themeName) {
+async function applyCursorPanelTheme(themeName) {
   const panel = document.getElementById('smtm-cursor-panel');
   if (!panel) {
     // Panel doesn't exist, check if it should be shown
     if (hasValidMapping()) {
-      showCursorPanel(themeName);
+      await showCursorPanel(themeName);
+      // Ensure styles are applied after panel is created
+      requestAnimationFrame(() => {
+        const newPanel = document.getElementById('smtm-cursor-panel');
+        if (newPanel) {
+          reapplyPanelStyles(newPanel, themeName);
+        }
+      });
     }
     return;
   }
   
   // Recreate panel with new theme
   hideCursorPanel();
-  showCursorPanel(themeName);
+  await showCursorPanel(themeName);
+  
+  // Explicitly reapply all styles after recreation to ensure they stick
+  requestAnimationFrame(() => {
+    const newPanel = document.getElementById('smtm-cursor-panel');
+    if (newPanel) {
+      reapplyPanelStyles(newPanel, themeName);
+    }
+  });
+}
+
+/**
+ * Reapplies all panel styles with !important flags
+ * @param {HTMLElement} panel - The panel element
+ * @param {string} themeName - The active theme name
+ */
+async function reapplyPanelStyles(panel, themeName) {
+  // Ensure themes are loaded before accessing them
+  const themesReady = await waitForThemes();
+  if (!themesReady) {
+    console.error('[SMTM Cursor Panel] Cannot reapply styles - themes not available');
+    return;
+  }
+  
+  const themes = window.SMTM?.themes || {};
+  const panelThemes = themes.panelThemes || {};
+  const theme = panelThemes[themeName] || panelThemes.light || {};
+  const panelDefault = theme.panel?.default;
+  
+  if (!panelDefault) {
+    console.error('[SMTM Cursor Panel] Cannot reapply styles - theme not found:', themeName);
+    console.error('[SMTM Cursor Panel] Available themes:', Object.keys(panelThemes));
+    return;
+  }
+  
+  // Reapply defensive !important styles
+  if (panelDefault.backgroundColor) {
+    panel.style.setProperty('background-color', panelDefault.backgroundColor, 'important');
+  }
+  if (panelDefault.border) {
+    panel.style.setProperty('border', panelDefault.border, 'important');
+  }
+  if (panelDefault.color) {
+    panel.style.setProperty('color', panelDefault.color, 'important');
+  }
+  if (panelDefault.padding) {
+    const paddingValue = typeof panelDefault.padding === 'number' 
+      ? `${panelDefault.padding}px` 
+      : panelDefault.padding;
+    panel.style.setProperty('padding', paddingValue, 'important');
+  }
+  if (panelDefault.borderRadius !== undefined) {
+    const borderRadiusValue = typeof panelDefault.borderRadius === 'number'
+      ? `${panelDefault.borderRadius}px`
+      : panelDefault.borderRadius;
+    panel.style.setProperty('border-radius', borderRadiusValue, 'important');
+  }
+  if (panelDefault.fontSize) {
+    const fontSizeValue = typeof panelDefault.fontSize === 'number'
+      ? `${panelDefault.fontSize}px`
+      : panelDefault.fontSize;
+    panel.style.setProperty('font-size', fontSizeValue, 'important');
+  }
+  
+  // Ensure critical layout properties
+  panel.style.setProperty('position', 'fixed', 'important');
+  panel.style.setProperty('z-index', '10000', 'important');
+  panel.style.setProperty('display', 'flex', 'important');
 }
 
 // Export functions to global scope

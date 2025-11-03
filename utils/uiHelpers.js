@@ -594,7 +594,7 @@ function toggleInfoTooltip(theme, show) {
     }
 
     if (show) {
-        container.innerHTML = `Counts only the data you see in the table.<br>Scroll through all rows to get full stats.<br><b>Everything stays local — nothing is sent anywhere.</b>`;
+        container.innerHTML = `Counts only the data you see in the table.<br>Scroll through all rows to get full stats.<br>You can drag the panel.<br><b>Everything stays local — nothing is sent anywhere.</b>`;
         container.style.display = 'block';
         updateInfoTooltipPosition(); // Ensure position is correct before showing
         requestAnimationFrame(() => {

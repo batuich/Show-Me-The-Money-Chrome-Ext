@@ -65,88 +65,6 @@ function getCellCount() {
 }
 
 /**
- * Makes cursor panel draggable with position saving
- * @param {HTMLElement} element The panel element
- * @param {HTMLElement} handle The drag handle element
- */
-function makeCursorPanelDraggable(element, handle) {
-  let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-  let isDragging = false;
-  let mouseMoveHandler, mouseUpHandler;
-
-  // Stop mouseup and mousemove events during dragging (but allow mousedown to initiate drag)
-  const stopDragEvents = (e) => {
-    if (isDragging && (e.type === 'mousemove' || e.type === 'mouseup')) {
-      e.stopImmediatePropagation();
-      e.preventDefault();
-    }
-  };
-
-  // Stop mousemove and mouseup on handle during drag (but not mousedown - we need that)
-  ['mousemove', 'mouseup'].forEach(eventType => {
-    handle.addEventListener(eventType, stopDragEvents, true);
-    handle.addEventListener(eventType, stopDragEvents, false);
-  });
-
-  // Stop events on the panel element during dragging
-  ['mousemove', 'mouseup'].forEach(eventType => {
-    element.addEventListener(eventType, stopDragEvents, true);
-    element.addEventListener(eventType, stopDragEvents, false);
-  });
-
-  function dragMouseDown(e) {
-    e.preventDefault();
-    e.stopImmediatePropagation(); // Stop jQuery from seeing this mousedown
-    isDragging = true;
-    pos3 = e.clientX;
-    pos4 = e.clientY;
-    
-    mouseMoveHandler = (moveE) => {
-      moveE.preventDefault();
-      moveE.stopImmediatePropagation(); // Stop ALL handlers including jQuery
-      elementDrag(moveE);
-    };
-    
-    mouseUpHandler = (upE) => {
-      upE.preventDefault();
-      upE.stopImmediatePropagation(); // Stop ALL handlers including jQuery
-      isDragging = false;
-      closeDragElement(upE);
-      document.removeEventListener('mousemove', mouseMoveHandler, true);
-      document.removeEventListener('mouseup', mouseUpHandler, true);
-      mouseMoveHandler = null;
-      mouseUpHandler = null;
-    };
-    
-    // Use capture phase with highest priority (capture happens first)
-    document.addEventListener('mousemove', mouseMoveHandler, true);
-    document.addEventListener('mouseup', mouseUpHandler, true);
-  }
-
-  function elementDrag(e) {
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    pos1 = pos3 - e.clientX;
-    pos2 = pos4 - e.clientY;
-    pos3 = e.clientX;
-    pos4 = e.clientY;
-
-    const newTop = element.offsetTop - pos2;
-    const newLeft = element.offsetLeft - pos1;
-
-    element.style.top = `${newTop}px`;
-    element.style.left = `${newLeft}px`;
-  }
-
-  function closeDragElement(e) {
-    saveCursorPanelPosition({ top: element.style.top, left: element.style.left });
-  }
-
-  // Attach mousedown handler with capture phase to run before jQuery
-  handle.addEventListener('mousedown', dragMouseDown, true);
-}
-
-/**
  * Restores cursor panel position from localStorage
  * @param {HTMLElement} panel The panel element
  * @returns {boolean} True if position was restored
@@ -161,84 +79,6 @@ function restoreCursorPanelPosition(panel) {
     return true;
   }
   return false;
-}
-
-/**
- * Creates drag handle with SVG icon (matches Cursor structure exactly)
- * @param {Object} theme Theme configuration
- * @returns {HTMLElement} Drag handle element
- */
-function createCursorDragHandle(theme) {
-  const handle = document.createElement('div');
-  handle.id = 'smtm-drag-handle';
-  
-  // Apply theme styles
-  if (typeof applyThemeStyles === 'function') {
-    applyThemeStyles(handle, theme, 'dragHandle', 'default');
-  }
-  
-  // Only positioning and layout styles (no color/background)
-  Object.assign(handle.style, {
-    cursor: 'move',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0
-  });
-
-  // Get dot color from theme
-  const dotColor = theme.dragHandleDot?.default?.backgroundColor || '#5D5D5D';
-  const dotColorHover = theme.dragHandleDot?.hover?.backgroundColor || dotColor;
-
-  // Create SVG inline (matches Cursor structure exactly)
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('width', '6');
-  svg.setAttribute('height', '16');
-  svg.setAttribute('viewBox', '0 0 6 16');
-  svg.setAttribute('fill', 'none');
-  svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-
-  // Create three circles
-  const circles = [
-    { cx: 3, cy: 3, r: 1 },
-    { cx: 3, cy: 8, r: 1 },
-    { cx: 3, cy: 13, r: 1 }
-  ];
-
-  circles.forEach(circleData => {
-    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    circle.setAttribute('cx', circleData.cx.toString());
-    circle.setAttribute('cy', circleData.cy.toString());
-    circle.setAttribute('r', circleData.r.toString());
-    circle.setAttribute('fill', dotColor);
-    circle.classList.add('smtm-drag-dot');
-    svg.appendChild(circle);
-  });
-
-  handle.appendChild(svg);
-  
-  // Hover effects - update handle background and dot colors
-  handle.onmouseover = () => {
-    if (typeof applyThemeStyles === 'function') {
-      applyThemeStyles(handle, theme, 'dragHandle', 'hover');
-      // Update dot colors on hover
-      handle.querySelectorAll('.smtm-drag-dot').forEach(circle => {
-        circle.setAttribute('fill', dotColorHover);
-      });
-    }
-  };
-  
-  handle.onmouseout = () => {
-    if (typeof applyThemeStyles === 'function') {
-      applyThemeStyles(handle, theme, 'dragHandle', 'default');
-      // Restore default dot colors
-      handle.querySelectorAll('.smtm-drag-dot').forEach(circle => {
-        circle.setAttribute('fill', dotColor);
-      });
-    }
-  };
-
-  return handle;
 }
 
 /**
@@ -634,7 +474,8 @@ async function createCursorPanel(themeName = 'light') {
   }
   
   // Create drag handle
-  const dragHandle = createCursorDragHandle(theme);
+  const dragHandle = createDragHandle(theme);
+  dragHandle.classList.add('drag-handle');
   panel.appendChild(dragHandle);
   
   const hasDates = hasDateKeys();
@@ -659,7 +500,7 @@ async function createCursorPanel(themeName = 'light') {
   }
   
   // Make panel draggable
-  makeCursorPanelDraggable(panel, dragHandle);
+  makeDraggable(panel, dragHandle, saveCursorPanelPosition);
   
   return panel;
 }

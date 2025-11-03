@@ -147,7 +147,7 @@ async function createPanel(themeName = 'dark') {
     panel.appendChild(presetsContainer);
     panel.appendChild(totalDisplay);
 
-    makeDraggable(panel, dragHandle);
+    makeDraggable(panel, dragHandle, savePanelPosition);
 
     document.body.appendChild(panel);
 
@@ -180,30 +180,77 @@ function restorePanelPosition(panel) {
 }
 
 function createDragHandle(theme) {
-    const handle = document.createElement('div');
-    handle.id = 'smtm-drag-handle';
-    applyThemeStyles(handle, theme, 'dragHandle');
-    Object.assign(handle.style, {
-        cursor: 'move',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-    });
+  const handle = document.createElement('div');
+  handle.id = 'smtm-drag-handle';
+  handle.classList.add('drag-handle');
+  
+  // Apply theme styles
+  if (typeof applyThemeStyles === 'function') {
+    applyThemeStyles(handle, theme, 'dragHandle', 'default');
+  }
+  
+  // Only positioning and layout styles (no color/background)
+  Object.assign(handle.style, {
+    cursor: 'move',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0
+  });
 
-    handle.innerHTML = `<svg width="6" height="16" viewBox="0 0 6 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-<circle cx="3" cy="3" r="1" fill="#5D5D5D"/>
-<circle cx="3" cy="8" r="1" fill="#5D5D5D"/>
-<circle cx="3" cy="13" r="1" fill="#5D5D5D"/>
-</svg>`;
+  // Get dot color from theme
+  const dotColor = theme.dragHandleDot?.default?.backgroundColor || '#5D5D5D';
+  const dotColorHover = theme.dragHandleDot?.hover?.backgroundColor || dotColor;
 
-    handle.onmouseover = () => {
-        applyThemeStyles(handle, theme, 'dragHandle', 'hover');
-    };
-    handle.onmouseout = () => {
-        applyThemeStyles(handle, theme, 'dragHandle', 'default');
-    };
+  // Create SVG inline (matches Cursor structure exactly)
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('width', '6');
+  svg.setAttribute('height', '16');
+  svg.setAttribute('viewBox', '0 0 6 16');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
 
-    return handle;
+  // Create three circles
+  const circles = [
+    { cx: 3, cy: 3, r: 1 },
+    { cx: 3, cy: 8, r: 1 },
+    { cx: 3, cy: 13, r: 1 }
+  ];
+
+  circles.forEach(circleData => {
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', circleData.cx.toString());
+    circle.setAttribute('cy', circleData.cy.toString());
+    circle.setAttribute('r', circleData.r.toString());
+    circle.setAttribute('fill', dotColor);
+    circle.classList.add('smtm-drag-dot');
+    svg.appendChild(circle);
+  });
+
+  handle.appendChild(svg);
+  
+  // Hover effects - update handle background and dot colors
+  handle.onmouseover = () => {
+    if (typeof applyThemeStyles === 'function') {
+      applyThemeStyles(handle, theme, 'dragHandle', 'hover');
+      // Update dot colors on hover
+      handle.querySelectorAll('.smtm-drag-dot').forEach(circle => {
+        circle.setAttribute('fill', dotColorHover);
+      });
+    }
+  };
+  
+  handle.onmouseout = () => {
+    if (typeof applyThemeStyles === 'function') {
+      applyThemeStyles(handle, theme, 'dragHandle', 'default');
+      // Restore default dot colors
+      handle.querySelectorAll('.smtm-drag-dot').forEach(circle => {
+        circle.setAttribute('fill', dotColor);
+      });
+    }
+  };
+
+  return handle;
 }
 
 function createPresetButtons(theme) {
@@ -400,44 +447,53 @@ function updateMissingDataContainerPosition() {
 }
 
 /**
- * Makes an element draggable.
- * @param {HTMLElement} element The element to make draggable.
- * @param {HTMLElement} handle The handle to drag the element by.
+ * Makes a panel draggable with position saving and robust event handling.
+ * @param {HTMLElement} element The panel element to drag.
+ * @param {HTMLElement} handle The handle element to initiate dragging.
+ * @param {Function} savePositionCallback Callback function to save the panel's position.
  */
-function makeDraggable(element, handle) {
+function makeDraggable(panel, handle, savePositionCallback) {
+  // Unified safe drag logic (replaces srcElement.className.includes to prevent TypeError on non-Cursor sites)
   let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-  handle.onmousedown = dragMouseDown;
 
-  function dragMouseDown(e) {
+  const dragMouseDown = (e) => {
+    // Check if the drag handle was clicked
+    if (!e.target.closest('.drag-handle')) {
+      return;
+    }
+
     e.preventDefault();
     pos3 = e.clientX;
     pos4 = e.clientY;
-    document.onmouseup = closeDragElement;
-    document.onmousemove = elementDrag;
-  }
 
-  function elementDrag(e) {
+    document.addEventListener('mouseup', closeDragElement);
+    document.addEventListener('mousemove', elementDrag);
+  };
+
+  const elementDrag = (e) => {
     e.preventDefault();
     pos1 = pos3 - e.clientX;
     pos2 = pos4 - e.clientY;
     pos3 = e.clientX;
     pos4 = e.clientY;
 
-    const newTop = element.offsetTop - pos2;
-    const newLeft = element.offsetLeft - pos1;
+    panel.style.top = `${panel.offsetTop - pos2}px`;
+    panel.style.left = `${panel.offsetLeft - pos1}px`;
+  };
 
-    element.style.top = `${newTop}px`;
-    element.style.left = `${newLeft}px`;
+  const closeDragElement = () => {
+    document.removeEventListener('mouseup', closeDragElement);
+    document.removeEventListener('mousemove', elementDrag);
 
-    updateMissingDataContainerPosition();
-    updateInfoTooltipPosition();
-  }
+    if (savePositionCallback) {
+      savePositionCallback({
+        top: panel.style.top,
+        left: panel.style.left
+      });
+    }
+  };
 
-  function closeDragElement() {
-    document.onmouseup = null;
-    document.onmousemove = null;
-    savePanelPosition({ top: element.style.top, left: element.style.left });
-  }
+  handle.addEventListener('mousedown', dragMouseDown);
 }
 
 /**

@@ -138,3 +138,19 @@ function getPanelPosition() {
 function savePanelPosition(position) {
   localStorage.setItem('panelPosition', JSON.stringify(position));
 }
+
+/**
+ * Retrieves the selected range from localStorage.
+ * @returns {string|null} The saved range ('1d', '7d', '30d') or null.
+ */
+function getSelectedRange() {
+  return localStorage.getItem('selectedRange');
+}
+
+/**
+ * Saves the selected range to localStorage.
+ * @param {string} range The range to save.
+ */
+function saveSelectedRange(range) {
+  localStorage.setItem('selectedRange', range);
+}

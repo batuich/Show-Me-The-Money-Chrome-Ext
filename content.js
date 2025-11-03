@@ -496,10 +496,12 @@ async function processTransactions() {
 // Make updateTotalDisplay globally accessible so it can be called from uiHelpers.js
 window.updateTotalDisplay = function(startDate, endDate) {
   const history = getHistory();
+  const range = window.SMTM.state?.range || '1d';
 
   if (!startDate || !endDate) {
+    const days = parseInt(range.replace('d', ''));
     const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - days);
     startDate = thirtyDaysAgo;
     endDate = new Date();
   }

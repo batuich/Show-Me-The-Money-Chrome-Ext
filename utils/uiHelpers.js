@@ -130,6 +130,10 @@ async function positionPanelInitially(panel) {
  * @returns {HTMLElement} The created panel element.
  */
 async function createPanel(themeName = 'dark') {
+    // Initialize state for range persistence
+    if (!window.SMTM.state) window.SMTM.state = {};
+    if (!window.SMTM.state.range) window.SMTM.state.range = '1d';
+
     const theme = themes[themeName];
     if (!theme) {
         console.error(`Show Me The Money: Theme "${themeName}" not found.`);
@@ -307,6 +311,15 @@ function createPresetButtons(theme) {
             button.classList.add('active');
             applyThemeStyles(button, theme, 'button', 'active');
 
+            // Update global state for range persistence
+            window.SMTM.state.range = preset;
+            console.log('[SMTM] Active range:', window.SMTM.state.range);
+
+            // Save the newly selected range
+            if (typeof saveSelectedRange === 'function') {
+                saveSelectedRange(preset);
+            }
+
             const days = parseInt(preset.replace('d', ''));
             const endDate = new Date();
             const startDate = new Date();
@@ -324,9 +337,14 @@ function createPresetButtons(theme) {
         container.appendChild(button);
     });
 
+    // Default active range: '1d' on panel initialization
     setTimeout(() => {
-        const defaultButton = container.querySelector('button[data-preset="30d"]');
-        if (defaultButton) defaultButton.click();
+        const savedRange = typeof getSelectedRange === 'function' ? getSelectedRange() : null;
+        const defaultPreset = savedRange || window.SMTM.state.range || '1d'; // Use saved range or default to '1d'
+        const defaultButton = container.querySelector(`button[data-preset="${defaultPreset}"]`);
+        if (defaultButton) {
+            defaultButton.click();
+        }
     }, 0);
 
     return container;

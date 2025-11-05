@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Show Me The Money</title>
+  <style>
+    /* Fallback styles in case theme doesn't load */
+    body {
+      margin: 0;
+      padding: 0;
+      width: 240px;
+      background-color: #13120A;
+      color: #FFF;
+      font-family: 'Inter', 'SF Pro Text', sans-serif;
+      font-size: 13px;
+    }
+    
+    #smtm-menu-container {
+      width: 240px;
+      padding: 12px;
+      background-color: #13120A;
+      color: #FFF;
+      border-radius: 6px;
+    }
+    
+    .smtm-menu-toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      margin-bottom: 8px;
+      gap: 8px;
+    }
+    
+    .smtm-menu-toggle-row span {
+      color: #FFF;
+      font-size: 13px;
+    }
+    
+    .smtm-menu-toggle-row img {
+      width: 16px;
+      height: 16px;
+    }
+    
+    .smtm-menu-button {
+      width: 100%;
+      background-color: transparent;
+      color: #B5B5B6;
+      padding: 6px 10px;
+      border-radius: 4px;
+      border: none;
+      margin-bottom: 12px;
+      cursor: pointer;
+      font-size: 13px;
+      font-family: 'Inter', 'SF Pro Text', sans-serif;
+    }
+    
+    .smtm-menu-button:hover {
+      background-color: #25231C;
+      color: #fff;
+    }
+    
+    .smtm-menu-help-block {
+      margin-top: 12px;
+      padding: 12px;
+      background-color: #1E1C15;
+      border-radius: 4px;
+    }
+    
+    .smtm-menu-help-title {
+      color: #FFF;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      margin-top: 0;
+      font-family: 'Inter', 'SF Pro Text', sans-serif;
+    }
+    
+    .smtm-menu-help-text {
+      color: #B5B5B6;
+      font-size: 12px;
+      margin-bottom: 8px;
+      line-height: 1.4;
+      margin-top: 0;
+      font-family: 'Inter', 'SF Pro Text', sans-serif;
+    }
+    
+    .smtm-menu-help-text:last-child {
+      margin-bottom: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="smtm-menu-container">
+    <div class="smtm-menu-toggle-row">
+      <span>Show total bar</span>
+      <img src="../assets/icons/eye-open.svg" alt="Toggle icon" />
+    </div>
+    <button class="smtm-menu-button">Clear All Data</button>
+    <div class="smtm-menu-help-block">
+      <h3 class="smtm-menu-help-title">How it works</h3>
+      <p class="smtm-menu-help-text">Counts only the data visible in the table. Scroll through all rows to get complete stats.</p>
+      <p class="smtm-menu-help-text">All collected data stays on your device — nothing is sent anywhere.</p>
+    </div>
+  </div>
+  
+  <script src="menu.js"></script>
+</body>
+</html>
+

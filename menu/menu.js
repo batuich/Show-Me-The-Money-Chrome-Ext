@@ -68,6 +68,9 @@
 
     const container = document.getElementById('smtm-menu-container');
     const toggleRow = document.querySelector('.smtm-menu-toggle-row');
+    const toggleText = document.querySelector('.smtm-menu-toggle-text');
+    const toggleButton = document.querySelector('.smtm-menu-toggle-button');
+    const buttonWrapper = document.querySelector('.smtm-menu-button-wrapper');
     const button = document.querySelector('.smtm-menu-button');
     const helpBlock = document.querySelector('.smtm-menu-help-block');
     const helpTitle = document.querySelector('.smtm-menu-help-title');
@@ -80,6 +83,29 @@
 
     if (toggleRow && theme.menu.menuToggleRow) {
       applyThemeStyles(toggleRow, theme.menu, 'menuToggleRow');
+    }
+
+    if (toggleText && theme.menu.menuToggleText) {
+      applyThemeStyles(toggleText, theme.menu, 'menuToggleText');
+    }
+
+    if (toggleButton && theme.menu.menuToggleButton) {
+      applyThemeStyles(toggleButton, theme.menu, 'menuToggleButton');
+      
+      // Add hover state
+      if (theme.menu.menuToggleButton.hover) {
+        toggleButton.addEventListener('mouseenter', () => {
+          applyThemeStyles(toggleButton, theme.menu, 'menuToggleButton', 'hover');
+        });
+        
+        toggleButton.addEventListener('mouseleave', () => {
+          applyThemeStyles(toggleButton, theme.menu, 'menuToggleButton');
+        });
+      }
+    }
+
+    if (buttonWrapper && theme.menu.menuButtonWrapper) {
+      applyThemeStyles(buttonWrapper, theme.menu, 'menuButtonWrapper');
     }
 
     if (button && theme.menu.menuButton) {

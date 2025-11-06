@@ -3,7 +3,9 @@
   "name": "Show Me The Money",
   "version": "1.0",
   "description": "Automatically summarizes credit usage on specified websites.",
-  "permissions": [],
+  "permissions": [
+    "activeTab"
+  ],
   "content_scripts": [
     {
       "matches": [
@@ -24,7 +26,9 @@
     {
       "resources": [
         "themes.json",
-        "assets/icons/arrow-down.svg"
+        "assets/icons/arrow-down.svg",
+        "assets/icons/eye-open.svg",
+        "assets/icons/eye-closed.svg"
       ],
       "matches": [
         "https://cursor.com/*"

@@ -148,6 +148,30 @@
   async function init() {
     await loadThemes();
     applyMenuStyles();
+
+    const toggleButton = document.querySelector('.smtm-menu-toggle-button');
+    if (toggleButton) {
+      toggleButton.addEventListener('click', () => {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (tabs[0] && tabs[0].id) {
+            chrome.tabs.sendMessage(tabs[0].id, { action: 'togglePanel' }, (response) => {
+              if (chrome.runtime.lastError) {
+                console.error('Show Me The Money: Error sending message:', chrome.runtime.lastError.message);
+                return;
+              }
+              
+              const icon = toggleButton.querySelector('img');
+              if (response && icon) {
+                if (response.status === 'visible') {
+                  icon.src = chrome.runtime.getURL('assets/icons/eye-open.svg');
+                } else {
+                  icon.src = chrome.runtime.getURL('assets/icons/eye-closed.svg');
+                }
+              }
+            });
+          }
+        });
+      });
+    }
   }
 })();
-

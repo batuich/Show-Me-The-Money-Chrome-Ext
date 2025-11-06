@@ -599,5 +599,24 @@ function blinkDebugBadge() {
     }
     init();
   }
+  
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'togglePanel') {
+      const panel = document.getElementById('smtm-cursor-panel') || document.getElementById('show-me-the-money-panel');
+      if (panel) {
+        const isVisible = panel.style.display !== 'none';
+        if (isVisible) {
+          panel.style.display = 'none';
+          sendResponse({ status: 'hidden' });
+        } else {
+          panel.style.display = 'flex'; // Or 'block', 'flex' is likely better for the panel
+          sendResponse({ status: 'visible' });
+        }
+      } else {
+        sendResponse({ status: 'not_found' });
+      }
+    }
+    return true; // Indicates that the response is sent asynchronously
+  });
 
 })(); // End of IIFE

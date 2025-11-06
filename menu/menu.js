@@ -196,5 +196,34 @@
         });
       });
     }
+
+    const clearButton = document.querySelector('.smtm-menu-button');
+    if (clearButton) {
+      const originalText = clearButton.textContent;
+      const theme = themes['cursor'];
+
+      clearButton.addEventListener('click', () => {
+        // Send a message to the content script to clear the data
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (tabs[0] && tabs[0].id) {
+            chrome.tabs.sendMessage(tabs[0].id, { action: 'clearData' });
+          }
+        });
+
+        // Update button text and style for user feedback
+        clearButton.textContent = 'Done!';
+        if (theme && theme.menu && theme.menu.doneTextColor) {
+          clearButton.style.color = theme.menu.doneTextColor;
+        }
+
+        setTimeout(() => {
+          clearButton.textContent = originalText;
+          // Re-apply original styles from the theme
+          if (theme && theme.menu && theme.menu.menuButton) {
+            applyThemeStyles(clearButton, theme.menu, 'menuButton');
+          }
+        }, 2500);
+      });
+    }
   }
 })();

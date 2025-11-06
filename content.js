@@ -653,6 +653,19 @@ function blinkDebugBadge() {
   }
   
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'clearData') {
+      // Clear the page's localStorage, where the extension data is stored.
+      localStorage.clear();
+      
+      // Now, update the UI to reflect the cleared data.
+      if (window.updateTotalDisplay) {
+        window.updateTotalDisplay();
+      }
+      
+      sendResponse({ status: 'cleared_and_updated' });
+      return true; // Keep message channel open for async response
+    }
+
     if (request.action === 'togglePanel') {
       (async () => {
         try {

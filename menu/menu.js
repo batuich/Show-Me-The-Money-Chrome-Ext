@@ -151,23 +151,46 @@
 
     const toggleButton = document.querySelector('.smtm-menu-toggle-button');
     if (toggleButton) {
+      const updateToggleIcon = (visibility) => {
+        if (!icon) return;
+        const iconPath = visibility === 'hidden' ? 'assets/icons/eye-closed.svg' : 'assets/icons/eye-open.svg';
+        icon.src = chrome.runtime.getURL(iconPath);
+      };
+
+      // Sync icon on popup open
+      const initialVisibility = localStorage.getItem('smtmPanelVisibility');
+      const icon = toggleButton.querySelector('img');
+      if (icon) {
+        updateToggleIcon(initialVisibility);
+      }
+
       toggleButton.addEventListener('click', () => {
+        // Determine new state and save it
+        const currentVisibility = localStorage.getItem('smtmPanelVisibility');
+        const newVisibility = currentVisibility === 'hidden' ? 'visible' : 'hidden';
+        localStorage.setItem('smtmPanelVisibility', newVisibility);
+
+        // Send message to content script to toggle the panel
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
           if (tabs[0] && tabs[0].id) {
             chrome.tabs.sendMessage(tabs[0].id, { action: 'togglePanel' }, (response) => {
               if (chrome.runtime.lastError) {
                 console.error('Show Me The Money: Error sending message:', chrome.runtime.lastError.message);
+                localStorage.setItem('smtmPanelVisibility', currentVisibility);
+                updateToggleIcon(currentVisibility);
                 return;
               }
-              
-              const icon = toggleButton.querySelector('img');
-              if (response && icon) {
-                if (response.status === 'visible') {
-                  icon.src = chrome.runtime.getURL('assets/icons/eye-open.svg');
-                } else {
-                  icon.src = chrome.runtime.getURL('assets/icons/eye-closed.svg');
-                }
+
+              if (!response || response.status === 'error') {
+                console.error('Show Me The Money: Toggle response error:', response?.message || 'unknown_error');
+                localStorage.setItem('smtmPanelVisibility', currentVisibility);
+                updateToggleIcon(currentVisibility);
+                return;
               }
+
+              const resolvedVisibility = response.status === 'not_found' ? 'hidden' : response.status;
+              localStorage.setItem('smtmPanelVisibility', resolvedVisibility);
+              updateToggleIcon(resolvedVisibility);
             });
           }
         });

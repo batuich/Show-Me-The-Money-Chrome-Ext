@@ -43,6 +43,43 @@ if (typeof window.SMTM.debug.table !== 'function') {
   };
 }
 
+/**
+ * Enforces the 'hidden' state of the panel by hiding it and observing
+ * for style changes that might make it visible again.
+ * @param {HTMLElement} panel The main panel element.
+ */
+function enforceHiddenState(panel) {
+  const missingDataContainer = document.getElementById('smtm-missing-data-container');
+  const infoTooltipContainer = document.getElementById('smtm-info-tooltip-container');
+
+  const hideAll = () => {
+    if (panel.style.display !== 'none') {
+      panel.style.display = 'none';
+    }
+    if (missingDataContainer && missingDataContainer.style.display !== 'none') {
+      missingDataContainer.style.display = 'none';
+    }
+    if (infoTooltipContainer && infoTooltipContainer.style.display !== 'none') {
+      infoTooltipContainer.style.display = 'none';
+    }
+  };
+
+  // Hide it once immediately
+  hideAll();
+
+  // Create an observer to re-apply the hidden state if it's changed by other scripts
+  const observer = new MutationObserver(() => {
+    if (localStorage.getItem('smtmPanelVisibility') === 'hidden' && panel.style.display !== 'none') {
+      window.SMTM.debug.log('Panel visibility was changed externally. Re-enforcing hidden state.');
+      hideAll();
+    }
+  });
+
+  observer.observe(panel, { attributes: true, attributeFilter: ['style'] });
+  window.SMTM.visibilityObserver = observer;
+  window.SMTM.debug.log('Visibility observer attached to enforce hidden state.');
+}
+
 async function init() {
   window.SMTM.debug.group('Script Initialization');
   window.SMTM.debug.log('Timestamp:', new Date().toISOString());
@@ -56,10 +93,20 @@ async function init() {
   // Wait for themes to be loaded
   await loadThemes();
 
+  const storedVisibility = localStorage.getItem('smtmPanelVisibility');
+  const shouldRenderPanel = storedVisibility !== 'hidden';
+
+  if (!shouldRenderPanel) {
+    console.log('[SMTM Init] Panel hidden — skipping render due to stored state.');
+  }
+
   const theme = window.location.hostname.includes('cursor.com') ? 'cursor' : 'dark';
 
-  // Create the panel and insert it into the DOM
-  const panel = await createPanel(theme);
+  // Create the panel and insert it into the DOM when appropriate
+  let panel = null;
+  if (shouldRenderPanel) {
+    panel = await createPanel(theme);
+  }
 
   // The panel's position is handled by createPanel and restorePanelPosition
 
@@ -75,6 +122,11 @@ async function init() {
   
   // Set up scroll listener
   setupScrollListener();
+
+  // Restore and enforce visibility state from localStorage
+  if (panel && storedVisibility === 'hidden') {
+    enforceHiddenState(panel);
+  }
 }
 
 /**
@@ -602,33 +654,62 @@ function blinkDebugBadge() {
   
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'togglePanel') {
-      const panel = document.getElementById('smtm-cursor-panel') || document.getElementById('show-me-the-money-panel');
-      const missingDataContainer = document.getElementById('smtm-missing-data-container');
-      const infoTooltipContainer = document.getElementById('smtm-info-tooltip-container');
+      (async () => {
+        try {
+          const currentVisibility = localStorage.getItem('smtmPanelVisibility') || 'visible';
+          const newVisibility = currentVisibility === 'hidden' ? 'visible' : 'hidden';
+          let panel = document.getElementById('smtm-cursor-panel') || document.getElementById('show-me-the-money-panel');
 
-      if (panel) {
-        const isVisible = panel.style.display !== 'none';
-        if (isVisible) {
-          // Hide everything
-          panel.style.display = 'none';
-          if (missingDataContainer) {
-            missingDataContainer.style.display = 'none';
+          if (!panel && newVisibility === 'visible') {
+            await loadThemes();
+            const theme = window.location.hostname.includes('cursor.com') ? 'cursor' : 'dark';
+            panel = await createPanel(theme);
+            updateTotalDisplay();
           }
-          if (infoTooltipContainer) {
-            infoTooltipContainer.style.display = 'none';
+
+          if (!panel) {
+            localStorage.setItem('smtmPanelVisibility', 'hidden');
+            sendResponse({ status: 'not_found' });
+            return;
           }
-          sendResponse({ status: 'hidden' });
-        } else {
-          // Show panel and missing data container (if it exists)
-          panel.style.display = 'flex';
-          if (missingDataContainer) {
-            missingDataContainer.style.display = 'block';
+
+          // If there's an observer enforcing a hidden state, disconnect it
+          // so the user's action can take effect.
+          if (window.SMTM.visibilityObserver) {
+            window.SMTM.visibilityObserver.disconnect();
+            window.SMTM.visibilityObserver = null;
+            window.SMTM.debug.log('Visibility observer disconnected by user action.');
           }
-          sendResponse({ status: 'visible' });
+
+          const missingDataContainer = document.getElementById('smtm-missing-data-container');
+          const infoTooltipContainer = document.getElementById('smtm-info-tooltip-container');
+
+          if (newVisibility === 'hidden') {
+            // Hide everything and enforce persisted hidden state
+            panel.style.display = 'none';
+            if (missingDataContainer) {
+              missingDataContainer.style.display = 'none';
+            }
+            if (infoTooltipContainer) {
+              infoTooltipContainer.style.display = 'none';
+            }
+            enforceHiddenState(panel);
+          } else {
+            // Show panel and missing data container (if it exists)
+            panel.style.display = 'flex';
+            if (missingDataContainer) {
+              missingDataContainer.style.display = 'block';
+            }
+          }
+
+          localStorage.setItem('smtmPanelVisibility', newVisibility);
+
+          sendResponse({ status: newVisibility });
+        } catch (error) {
+          console.error('Show Me The Money: Failed to toggle panel:', error);
+          sendResponse({ status: 'error', message: error?.message || 'unknown_error' });
         }
-      } else {
-        sendResponse({ status: 'not_found' });
-      }
+      })();
     }
     return true; // Indicates that the response is sent asynchronously
   });

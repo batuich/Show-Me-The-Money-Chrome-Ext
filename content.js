@@ -603,13 +603,27 @@ function blinkDebugBadge() {
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'togglePanel') {
       const panel = document.getElementById('smtm-cursor-panel') || document.getElementById('show-me-the-money-panel');
+      const missingDataContainer = document.getElementById('smtm-missing-data-container');
+      const infoTooltipContainer = document.getElementById('smtm-info-tooltip-container');
+
       if (panel) {
         const isVisible = panel.style.display !== 'none';
         if (isVisible) {
+          // Hide everything
           panel.style.display = 'none';
+          if (missingDataContainer) {
+            missingDataContainer.style.display = 'none';
+          }
+          if (infoTooltipContainer) {
+            infoTooltipContainer.style.display = 'none';
+          }
           sendResponse({ status: 'hidden' });
         } else {
-          panel.style.display = 'flex'; // Or 'block', 'flex' is likely better for the panel
+          // Show panel and missing data container (if it exists)
+          panel.style.display = 'flex';
+          if (missingDataContainer) {
+            missingDataContainer.style.display = 'block';
+          }
           sendResponse({ status: 'visible' });
         }
       } else {

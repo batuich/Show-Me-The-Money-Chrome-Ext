@@ -152,7 +152,7 @@
 			},
 			"menuButtonWrapper": {
 				"default": {
-					"padding": "6px 6px 6px 6px",
+					"padding": 8,
 					"marginBottom": 0,
 					"borderTop": "1px solid #323438"
 				}
@@ -162,7 +162,7 @@
 					"width": "100%",
 					"backgroundColor": "#2D2B23",
 					"color": "#FFFFFF",
-					"padding": "6px 10px",
+					"padding": "8px 10px",
 					"borderRadius": 4,
 					"fontSize": 13,
 					"fontFamily": "'Inter', 'SF Pro Text', sans-serif",

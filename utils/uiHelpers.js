@@ -332,6 +332,13 @@ function createPresetButtons(theme) {
 
 
         button.onclick = () => {
+            // Deactivate "Since" button
+            const sinceButton = document.querySelector('.smtm-since-button');
+            if (sinceButton) {
+                sinceButton.classList.remove('active');
+                applyThemeStyles(sinceButton, theme, 'panelSinceButton', 'default');
+            }
+
             document.querySelectorAll('#smtm-presets-container button').forEach(btn => {
                 btn.classList.remove('active');
                 applyThemeStyles(btn, theme, 'button', 'default');

@@ -581,45 +581,50 @@ async function processTransactions() {
   window.SMTM.debug.groupEnd();
 }
 
-// Make updateTotalDisplay globally accessible so it can be called from other scripts
-window.updateTotalDisplay = function() {
-    const history = getHistory();
+// Make updateTotalDisplay globally accessible so it can be called from uiHelpers.js
+window.updateTotalDisplay = function(startDate, endDate) {
+  const history = getHistory();
+
+  if (!startDate) {
     const savedDate = localStorage.getItem('smtmSelectedDate');
-    let selectedDate;
-
     if (savedDate) {
-        const [year, month, day] = savedDate.split('-').map(Number);
-        selectedDate = new Date(year, month - 1, day);
+      const [year, month, day] = savedDate.split('-').map(Number);
+      startDate = new Date(year, month - 1, day);
     } else {
-        const today = new Date();
-        selectedDate = new Date(today.getFullYear(), today.getMonth(), 1);
+      const today = new Date();
+      startDate = new Date(today.getFullYear(), today.getMonth(), 1);
     }
+  }
 
-    selectedDate.setHours(0, 0, 0, 0);
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
+  if (!endDate) {
+    endDate = new Date();
+  }
 
-    const filteredHistory = history.filter(t => {
-        const transactionDate = new Date(t.date);
-        return transactionDate >= selectedDate && transactionDate <= today;
-    });
+  startDate.setHours(0, 0, 0, 0);
+  endDate.setHours(23, 59, 59, 999);
 
-    const currencySymbol = window.location.hostname.includes('cursor.com') ? '$' : '';
-    const theme = window.location.hostname.includes('cursor.com') ? 'cursor' : 'dark';
+  const filteredHistory = history.filter(t => {
+    const transactionDate = new Date(t.date);
+    return transactionDate >= startDate && transactionDate <= endDate;
+  });
 
-    if (filteredHistory.length > 0) {
-        const total = filteredHistory.reduce((sum, t) => sum + t.amount, 0);
-        updateTotal(total, currencySymbol);
-    } else {
-        updateTotal("Not enough data for selected period");
-    }
+  const currencySymbol = window.location.hostname.includes('cursor.com') ? '$' : '';
+  const theme = window.location.hostname.includes('cursor.com') ? 'cursor' : 'dark';
 
-    const missingDays = checkForMissingDays(history, selectedDate, today);
-    if (today.getDate() > 3) {
-        toggleMissingDataLabel(theme, missingDays);
-    } else {
-        toggleMissingDataLabel(theme, []);
-    }
+  if (filteredHistory.length > 0) {
+    const total = filteredHistory.reduce((sum, t) => sum + t.amount, 0);
+    updateTotal(total, currencySymbol);
+  } else {
+    updateTotal("Not enough data for selected period");
+  }
+
+  const missingDays = checkForMissingDays(history, startDate, endDate);
+  const today = new Date();
+  if (today.getDate() > 3) {
+    toggleMissingDataLabel(theme, missingDays);
+  } else {
+    toggleMissingDataLabel(theme, []);
+  }
 }
 
 /**

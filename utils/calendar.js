@@ -244,7 +244,7 @@
                 const month = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
                 const day = selectedDate.getDate().toString().padStart(2, '0');
                 localStorage.setItem('smtmSelectedDate', `${year}-${month}-${day}`);
-                
+
                 // Update the "Since" button text immediately
                 if (window.SMTM && typeof window.SMTM.updateSinceButtonText === 'function') {
                   window.SMTM.updateSinceButtonText();
@@ -254,7 +254,18 @@
                 if (typeof window.updateTotalDisplay === 'function') {
                   window.updateTotalDisplay();
                 }
-                
+
+                // Set "Since" button to active and presets to inactive
+                const sinceButton = document.querySelector('.smtm-since-button');
+                if (sinceButton) {
+                  sinceButton.classList.add('active');
+                  applyThemeStyles(sinceButton, theme, 'panelSinceButton', 'active');
+                }
+                document.querySelectorAll('#smtm-presets-container button').forEach(btn => {
+                  btn.classList.remove('active');
+                  applyThemeStyles(btn, theme, 'button', 'default');
+                });
+
                 closeCalendar();
               };
             }

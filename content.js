@@ -127,7 +127,43 @@ async function init() {
   if (panel && storedVisibility === 'hidden') {
     enforceHiddenState(panel);
   }
+
+  // Initial update for the "Since" button
+  if (panel) {
+    updateSinceButtonText();
+  }
 }
+
+/**
+ * Updates the "Since" button text based on the selected date in localStorage.
+ */
+function updateSinceButtonText() {
+  const sinceButton = document.querySelector('.smtm-since-button');
+  if (!sinceButton) return;
+
+  let selectedDate;
+  const savedDate = localStorage.getItem('smtmSelectedDate');
+
+  if (savedDate) {
+    const [year, month, day] = savedDate.split('-').map(Number);
+    selectedDate = new Date(year, month - 1, day);
+  } else {
+    const today = new Date();
+    selectedDate = new Date(today.getFullYear(), today.getMonth(), 1);
+    const year = selectedDate.getFullYear();
+    const month = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
+    const day = selectedDate.getDate().toString().padStart(2, '0');
+    localStorage.setItem('smtmSelectedDate', `${year}-${month}-${day}`);
+  }
+
+  const day = selectedDate.getDate();
+  const month = selectedDate.toLocaleString('default', { month: 'short' });
+
+  sinceButton.innerText = `Since: ${day} ${month}`;
+}
+
+// Expose the function to be called from other scripts like calendar.js
+window.SMTM.updateSinceButtonText = updateSinceButtonText;
 
 /**
  * Sets up a MutationObserver to watch for table changes with debouncing

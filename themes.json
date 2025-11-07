@@ -64,6 +64,18 @@
 				"color": "#fff"
 			}
 		},
+		"panelSinceButton": {
+			"default": {
+				"backgroundColor": "transparent",
+				"color": "#B5B5B6",
+				"padding": "6px 10px",
+				"borderRadius": 4
+			},
+			"hover": {
+				"backgroundColor": "#25231C",
+				"color": "#fff"
+			}
+		},
 		"totalBlock": {
 			"default": {
 				"backgroundColor": "#1E1C15",

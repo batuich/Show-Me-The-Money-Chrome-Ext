@@ -153,10 +153,12 @@ async function createPanel(themeName = 'dark') {
     });
 
     const dragHandle = createDragHandle(theme);
+    const sinceButton = createSinceButton(theme);
     const presetsContainer = createPresetButtons(theme);
     const totalDisplay = createTotalDisplay(theme);
 
     panel.appendChild(dragHandle);
+    panel.appendChild(sinceButton);
     panel.appendChild(presetsContainer);
     panel.appendChild(totalDisplay);
 
@@ -175,6 +177,24 @@ async function createPanel(themeName = 'dark') {
     }
 
     return panel;
+}
+
+function createSinceButton(theme) {
+    const button = document.createElement('button');
+    button.className = 'smtm-since-button';
+    button.innerText = 'Since: 4 Nov';
+    applyThemeStyles(button, theme, 'panelSinceButton');
+    button.style.cursor = 'pointer';
+    button.style.border = 'none';
+
+    button.onmouseover = () => {
+        applyThemeStyles(button, theme, 'panelSinceButton', 'hover');
+    };
+    button.onmouseout = () => {
+        applyThemeStyles(button, theme, 'panelSinceButton', 'default');
+    };
+
+    return button;
 }
 
 /**
@@ -612,7 +632,7 @@ function toggleInfoTooltip(theme, show) {
     }
 
     if (show) {
-        container.innerHTML = `Counts only the data you see in the table.<br>Scroll through all rows to get full stats.<br>You can drag the panel.<br><b>Everything stays local — nothing is sent anywhere.</b>`;
+        container.innerHTML = `Counts only the data you see in the table. Scroll through all rows to get full stats. You can drag the panel.<br><b>Everything stays local — nothing is sent anywhere.</b>`;
         container.style.display = 'block';
         updateInfoTooltipPosition(); // Ensure position is correct before showing
         requestAnimationFrame(() => {

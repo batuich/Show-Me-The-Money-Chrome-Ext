@@ -249,6 +249,11 @@
                 if (window.SMTM && typeof window.SMTM.updateSinceButtonText === 'function') {
                   window.SMTM.updateSinceButtonText();
                 }
+
+                // Recalculate the total with the new date
+                if (typeof window.updateTotalDisplay === 'function') {
+                  window.updateTotalDisplay();
+                }
                 
                 closeCalendar();
               };

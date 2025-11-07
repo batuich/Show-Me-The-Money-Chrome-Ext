@@ -194,6 +194,14 @@ function createSinceButton(theme) {
         applyThemeStyles(button, theme, 'panelSinceButton', 'default');
     };
 
+    button.onclick = (event) => {
+        event.stopPropagation();
+        if (window.SMTM && typeof window.SMTM.createCalendarPopup === 'function') {
+            const themeName = window.location.hostname.includes('cursor.com') ? 'cursor' : 'dark';
+            window.SMTM.createCalendarPopup(button, themeName);
+        }
+    };
+
     return button;
 }
 

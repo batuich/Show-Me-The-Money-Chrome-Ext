@@ -17,6 +17,7 @@
         "utils/domParser.js",
         "utils/dateHelpers.js",
         "utils/uiHelpers.js",
+        "utils/calendar.js",
         "content.js"
       ],
       "css": []

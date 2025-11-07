@@ -116,6 +116,108 @@
 				"fontFamily": "'Inter', 'SF Pro Text', sans-serif"
 			}
 		},
+		"calendar": {
+			"container": {
+				"default": {
+					"backgroundColor": "rgba(27, 25, 18, 1)",
+					"width": "auto",
+					"display": "flex",
+					"flexDirection": "column",
+					"alignItems": "flex-start",
+					"gap": "4px",
+					"padding": "16px",
+					"borderRadius": "10px",
+					"border": "1px solid rgba(33, 31, 24, 1)"
+				}
+			},
+			"title": {
+				"default": {
+					"display": "flex",
+					"alignItems": "center",
+					"gap": "2px",
+					"alignSelf": "stretch"
+				}
+			},
+			"month": {
+				"default": {
+					"display": "flex",
+					"alignItems": "center",
+					"gap": "10px",
+					"padding": "2px 0",
+					"flexGrow": 1
+				}
+			},
+			"monthText": {
+				"default": {
+					"color": "rgba(255, 255, 255, 1)",
+					"lineHeight": "18px",
+					"fontFamily": "SF Pro Display",
+					"fontSize": 13,
+					"fontWeight": 400
+				}
+			},
+			"navButtons": {
+				"default": {
+					"display": "flex",
+					"alignItems": "center",
+					"gap": "4px"
+				}
+			},
+			"navButton": {
+				"default": {
+					"backgroundColor": "rgba(27, 25, 18, 1)",
+					"width": "22px",
+					"padding": "3px",
+					"borderRadius": "4px",
+					"display": "flex",
+					"alignItems": "center",
+					"justifyContent": "center"
+				},
+				"hover": {
+					"backgroundColor": "rgba(45, 43, 35, 1)"
+				}
+			},
+			"week": {
+				"default": {
+					"display": "flex",
+					"justifyContent": "space-between",
+					"alignItems": "center",
+					"gap": "13px",
+					"alignSelf": "stretch"
+				}
+			},
+			"weekDay": {
+				"default": {
+					"width": "22px",
+					"height": "22px",
+					"display": "flex",
+					"justifyContent": "center",
+					"alignItems": "center",
+					"color": "#B5B5B6",
+					"fontSize": 12
+				}
+			},
+			"day": {
+				"default": {
+					"width": "22px",
+					"height": "22px",
+					"display": "flex",
+					"justifyContent": "center",
+					"alignItems": "center",
+					"borderRadius": "4px",
+					"cursor": "pointer",
+					"color": "rgba(255, 255, 255, 1)",
+					"fontSize": 13
+				},
+				"hover": {
+					"backgroundColor": "rgba(45, 43, 35, 1)"
+				},
+				"today": {
+					"backgroundColor": "rgba(129, 160, 193, 1)",
+					"color": "#000"
+				}
+			}
+		},
 		"menu": {
 			"doneTextColor": "#9B9B9B",
 			"menuContainer": {

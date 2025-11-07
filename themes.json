@@ -215,6 +215,9 @@
 				"today": {
 					"backgroundColor": "rgba(129, 160, 193, 1)",
 					"color": "#000"
+				},
+				"disabled": {
+					"color": "#7A7A7A"
 				}
 			}
 		},

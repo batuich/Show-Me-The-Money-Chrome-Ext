@@ -82,11 +82,13 @@
     // --- Date Initialization ---
     const savedDate = localStorage.getItem('smtmSelectedDate');
     let selectedDate;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); 
+
     if (savedDate) {
       const [year, month, day] = savedDate.split('-').map(Number);
       selectedDate = new Date(year, month - 1, day);
     } else {
-      const today = new Date();
       selectedDate = new Date(today.getFullYear(), today.getMonth(), 1);
     }
 
@@ -129,6 +131,14 @@
     nextButton.onmouseover = () => applyThemeStyles(nextButton, theme, 'calendar.navButton', 'hover');
     nextButton.onmouseout = () => applyThemeStyles(nextButton, theme, 'calendar.navButton', 'default');
     nextButton.onclick = () => {
+      const nextMonth = new Date(displayDate);
+      nextMonth.setMonth(displayDate.getMonth() + 1);
+
+      if (nextMonth.getFullYear() > today.getFullYear() || 
+         (nextMonth.getFullYear() === today.getFullYear() && nextMonth.getMonth() > today.getMonth())) {
+        return;
+      }
+
       displayDate.setMonth(displayDate.getMonth() + 1);
       renderCalendarGrid();
     };
@@ -149,6 +159,15 @@
       const year = displayDate.getFullYear();
       const month = displayDate.getMonth();
       monthText.innerText = `${displayDate.toLocaleString('default', { month: 'long' })} ${year}`;
+
+      const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+      if (isCurrentMonth) {
+        nextButton.style.opacity = '0.5';
+        nextButton.style.pointerEvents = 'none';
+      } else {
+        nextButton.style.opacity = '1';
+        nextButton.style.pointerEvents = 'auto';
+      }
 
       const grid = document.createElement('div');
       grid.style.display = 'flex';
@@ -190,41 +209,50 @@
           } else {
             dayCell.innerText = date;
             const currentDate = new Date(year, month, date);
+            currentDate.setHours(0, 0, 0, 0);
 
-            const isSelected = selectedDate &&
-              currentDate.getFullYear() === selectedDate.getFullYear() &&
-              currentDate.getMonth() === selectedDate.getMonth() &&
-              currentDate.getDate() === selectedDate.getDate();
+            const isFutureDate = currentDate > today;
 
-            if (isSelected) {
-              applyThemeStyles(dayCell, theme, 'calendar.day', 'today'); // Use 'today' style for selected
+            if (isFutureDate) {
+              dayCell.classList.add('calendar-date-disabled');
+              applyThemeStyles(dayCell, theme, 'calendar.day', 'disabled');
+              dayCell.style.cursor = 'default';
+            } else {
+              const isSelected = selectedDate &&
+                currentDate.getFullYear() === selectedDate.getFullYear() &&
+                currentDate.getMonth() === selectedDate.getMonth() &&
+                currentDate.getDate() === selectedDate.getDate();
+
+              if (isSelected) {
+                applyThemeStyles(dayCell, theme, 'calendar.day', 'today'); // Use 'today' style for selected
+              }
+
+              dayCell.onmouseover = () => {
+                if (!isSelected) {
+                  applyThemeStyles(dayCell, theme, 'calendar.day', 'hover');
+                }
+              };
+              dayCell.onmouseout = () => {
+                if (!isSelected) {
+                  applyThemeStyles(dayCell, theme, 'calendar.day', 'default');
+                  dayCell.style.backgroundColor = '';
+                }
+              };
+              dayCell.onclick = () => {
+                selectedDate = currentDate;
+                const year = selectedDate.getFullYear();
+                const month = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
+                const day = selectedDate.getDate().toString().padStart(2, '0');
+                localStorage.setItem('smtmSelectedDate', `${year}-${month}-${day}`);
+                
+                // Update the "Since" button text immediately
+                if (window.SMTM && typeof window.SMTM.updateSinceButtonText === 'function') {
+                  window.SMTM.updateSinceButtonText();
+                }
+                
+                closeCalendar();
+              };
             }
-
-            dayCell.onmouseover = () => {
-              if (!isSelected) {
-                applyThemeStyles(dayCell, theme, 'calendar.day', 'hover');
-              }
-            };
-            dayCell.onmouseout = () => {
-              if (!isSelected) {
-                applyThemeStyles(dayCell, theme, 'calendar.day', 'default');
-                dayCell.style.backgroundColor = '';
-              }
-            };
-            dayCell.onclick = () => {
-              selectedDate = currentDate;
-              const year = selectedDate.getFullYear();
-              const month = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
-              const day = selectedDate.getDate().toString().padStart(2, '0');
-              localStorage.setItem('smtmSelectedDate', `${year}-${month}-${day}`);
-              
-              // Update the "Since" button text immediately
-              if (window.SMTM && typeof window.SMTM.updateSinceButtonText === 'function') {
-                window.SMTM.updateSinceButtonText();
-              }
-              
-              closeCalendar();
-            };
             date++;
           }
           week.appendChild(dayCell);

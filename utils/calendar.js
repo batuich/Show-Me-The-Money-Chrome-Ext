@@ -140,13 +140,23 @@
         const dayNumber = i * 7 + j + 1;
         day.innerText = dayNumber > 31 ? '' : dayNumber;
         applyThemeStyles(day, theme, 'calendar.day');
-        if (dayNumber === 10) {
+        const isToday = dayNumber === 10;
+
+        if (isToday) {
           applyThemeStyles(day, theme, 'calendar.day', 'today');
         }
-        day.onmouseover = () => applyThemeStyles(day, theme, 'calendar.day', 'hover');
+
+        day.onmouseover = () => {
+          if (!isToday) {
+            applyThemeStyles(day, theme, 'calendar.day', 'hover');
+          }
+        };
         day.onmouseout = () => {
-          if (dayNumber !== 10) {
+          if (!isToday) {
+            // Re-apply default styles which don't have a background color,
+            // and explicitly remove the background color property.
             applyThemeStyles(day, theme, 'calendar.day', 'default');
+            day.style.backgroundColor = '';
           }
         };
         day.onclick = () => closeCalendar();

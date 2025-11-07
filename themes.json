@@ -74,6 +74,10 @@
 			"hover": {
 				"backgroundColor": "#25231C",
 				"color": "#fff"
+			},
+			"active": {
+				"backgroundColor": "#1E1C15",
+				"color": "#fff"
 			}
 		},
 		"totalBlock": {

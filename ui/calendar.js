@@ -12,52 +12,51 @@
    */
   function loadThemes() {
     if (Object.keys(themes).length > 0) {
-      return Promise.resolve();
+      return Promise.resolve(themes);
     }
-    const themesUrl = (typeof chrome !== 'undefined' && chrome.runtime) ?
-      chrome.runtime.getURL('themes.json') :
-      'themes.json';
+
+    const canAccessRuntime = typeof chrome !== 'undefined' && !!chrome.runtime?.getURL;
+    const themesUrl = canAccessRuntime ? chrome.runtime.getURL('themes.json') : 'themes.json';
 
     return fetch(themesUrl)
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+      })
       .then(data => {
         themes = data;
+        return themes;
       })
       .catch(error => {
         console.error('Show Me The Money: Error loading themes:', error);
+
+        if (window.SMTM?.themes) {
+          themes = window.SMTM.themes;
+          return themes;
+        }
+
+        const fallbackTheme = {
+          calendar: {
+            container: { default: { backgroundColor: '#1E1C15', padding: '12px', borderRadius: '6px' } },
+            title: { default: { color: '#FFF', fontWeight: '600', marginBottom: '8px' } },
+            month: { default: { color: '#FFF', fontSize: '14px' } },
+            monthText: { default: { color: '#FFF', fontSize: '14px' } },
+            navButtons: { default: { display: 'flex', gap: '4px' } },
+            navButton: { default: { backgroundColor: 'transparent', border: 'none', cursor: 'pointer' } },
+            week: { default: { display: 'flex', gap: '4px' } },
+            weekDay: { default: { color: '#B5B5B6', fontSize: '12px', textAlign: 'center', flex: '1' } },
+            day: {
+              default: { color: '#FFF', padding: '6px', textAlign: 'center', borderRadius: '4px', cursor: 'pointer' },
+              hover: { backgroundColor: '#2A2820' },
+              today: { backgroundColor: '#423F34' },
+              disabled: { color: '#555', cursor: 'not-allowed' }
+            }
+          }
+        };
+
+        themes = { fallback: fallbackTheme };
+        return themes;
       });
-  }
-
-  /**
-   * Applies theme styles to an element
-   * @param {HTMLElement} el - Element to style
-   * @param {Object} theme - Theme object
-   * @param {string} themeKey - Key in theme object (e.g., 'calendar.container')
-   * @param {string} state - State (e.g., 'default', 'hover')
-   */
-  function applyThemeStyles(el, theme, themeKey, state = "default") {
-    const keys = themeKey.split('.');
-    let style = theme;
-    for (const key of keys) {
-      style = style?.[key];
-    }
-    style = style?.[state];
-
-    if (!style || !el) return;
-
-    for (const [prop, value] of Object.entries(style)) {
-      if (value === null || value === undefined) continue;
-
-      const cssProp = prop.replace(/[A-Z]/g, m => `-${m.toLowerCase()}`);
-      let finalValue = value;
-
-      const pixelProps = ['borderRadius', 'fontSize', 'height', 'width', 'top', 'left', 'right', 'bottom', 'padding', 'margin', 'gap'];
-      if (pixelProps.includes(prop) && typeof value === 'number') {
-        finalValue = `${value}px`;
-      }
-
-      el.style.setProperty(cssProp, finalValue, 'important');
-    }
   }
 
   /**
@@ -67,7 +66,7 @@
    */
   async function createCalendarPopup(anchorElement, themeName = 'cursor') {
     if (currentCalendar) {
-      currentCalendar.remove();
+      removeElement(currentCalendar);
       currentCalendar = null;
       return;
     }
@@ -80,22 +79,19 @@
     }
 
     // --- Date Initialization ---
-    const savedDate = localStorage.getItem('smtmSelectedDate');
-    let selectedDate;
+    const savedDate = getStoredDate();
+    let selectedDate = savedDate ? new Date(savedDate) : null;
     const today = new Date();
     today.setHours(0, 0, 0, 0); 
 
-    if (savedDate) {
-      const [year, month, day] = savedDate.split('-').map(Number);
-      selectedDate = new Date(year, month - 1, day);
-    } else {
+    if (!selectedDate || Number.isNaN(selectedDate.getTime())) {
       selectedDate = new Date(today.getFullYear(), today.getMonth(), 1);
+      setStoredDate(selectedDate);
     }
 
     let displayDate = new Date(selectedDate);
 
-    const calendar = document.createElement('div');
-    calendar.id = 'smtm-calendar-popup';
+    const calendar = createElement('div', { id: 'smtm-calendar-popup' });
     applyThemeStyles(calendar, theme, 'calendar.container');
     Object.assign(calendar.style, {
       position: 'absolute',
@@ -103,16 +99,16 @@
     });
 
     // --- Calendar Header ---
-    const header = document.createElement('div');
+    const header = createElement('div');
     applyThemeStyles(header, theme, 'calendar.title');
 
-    const monthDisplay = document.createElement('div');
+    const monthDisplay = createElement('div');
     applyThemeStyles(monthDisplay, theme, 'calendar.month');
-    const monthText = document.createElement('span');
+    const monthText = createElement('span');
     applyThemeStyles(monthText, theme, 'calendar.monthText');
     monthDisplay.appendChild(monthText);
 
-    const navButtons = document.createElement('div');
+    const navButtons = createElement('div');
     applyThemeStyles(navButtons, theme, 'calendar.navButtons');
 
     const prevButton = document.createElement('button');
@@ -240,10 +236,7 @@
               };
               dayCell.onclick = () => {
                 selectedDate = currentDate;
-                const year = selectedDate.getFullYear();
-                const month = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
-                const day = selectedDate.getDate().toString().padStart(2, '0');
-                localStorage.setItem('smtmSelectedDate', `${year}-${month}-${day}`);
+                setStoredDate(selectedDate);
 
                 // Update the "Since" button text immediately
                 if (window.SMTM && typeof window.SMTM.updateSinceButtonText === 'function') {
@@ -290,7 +283,7 @@
     // --- Close Logic ---
     const closeCalendar = () => {
       if (currentCalendar) {
-        currentCalendar.remove();
+        removeElement(currentCalendar);
         currentCalendar = null;
         document.removeEventListener('click', handleClickOutside);
         document.removeEventListener('keydown', handleEsc);

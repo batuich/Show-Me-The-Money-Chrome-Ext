@@ -14,11 +14,13 @@
       ],
       "js": [
         "utils/storage.js",
-        "utils/domParser.js",
         "utils/dateHelpers.js",
+        "utils/format.js",
         "utils/uiHelpers.js",
-        "utils/calendar.js",
-        "content.js"
+        "core/domParser.js",
+        "ui/calendar.js",
+        "ui/createPanel.js",
+        "core/content.js"
       ],
       "css": []
     }
@@ -34,7 +36,7 @@
     "matches": ["<all_urls>"]
   }],
   "action": {
-    "default_popup": "menu/index.html",
+    "default_popup": "ui/menu/index.html",
     "default_icon": {
       "16": "assets/icons/icon16.png",
       "48": "assets/icons/icon48.png",

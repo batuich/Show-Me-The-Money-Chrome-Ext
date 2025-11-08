@@ -4,38 +4,17 @@
   'use strict';
 
   let themes = {};
+  let config = null;
 
-  /**
-   * Applies theme styles to an element
-   * @param {HTMLElement} el - Element to style
-   * @param {Object} theme - Theme object
-   * @param {string} themeKey - Key in theme object (e.g., 'menuContainer')
-   * @param {string} state - State (e.g., 'default', 'hover')
-   */
-  function applyThemeStyles(el, theme, themeKey, state = "default") {
-    const style = theme[themeKey]?.[state];
-    if (!style || !el) return;
-
-    for (const [prop, value] of Object.entries(style)) {
-      if (value === null || value === undefined) continue;
-
-      const cssProp = prop.replace(/[A-Z]/g, m => `-${m.toLowerCase()}`);
-      let finalValue = value;
-
-      // Handle numeric values that need 'px' suffix
-      const pixelProps = ['borderRadius', 'fontSize', 'height', 'width', 'top', 'left', 'right', 'bottom', 'padding', 'margin', 'marginTop', 'marginBottom', 'marginLeft', 'marginRight', 'paddingTop', 'paddingBottom', 'paddingLeft', 'paddingRight', 'gap'];
-      if (pixelProps.includes(prop) && typeof value === 'number') {
-        finalValue = `${value}px`;
-      }
-
-      // Handle display properties that don't need 'px'
-      if (prop === 'display' || prop === 'alignItems' || prop === 'justifyContent' || prop === 'lineHeight') {
-        finalValue = value;
-      }
-
-      el.style.setProperty(cssProp, finalValue, 'important');
+  const DEFAULT_CONFIG = {
+    bar: {
+      sinceButton: true,
+      '1dButton': true,
+      '7dButton': true,
+      '30dButton': true,
+      total: true
     }
-  }
+  };
 
   /**
    * Loads themes from themes.json
@@ -50,6 +29,31 @@
       .catch(error => {
         console.error('Show Me The Money: Error loading themes:', error);
         // Fallback styles are already in HTML, so we can continue
+      });
+  }
+
+  /**
+   * Loads config.json so the popup can reflect the current feature set.
+   * @returns {Promise<Object>}
+   */
+  function loadConfig() {
+    if (config) return Promise.resolve(config);
+
+    return fetch(chrome.runtime.getURL('config.json'), { cache: 'no-store' })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        config = data;
+        return config;
+      })
+      .catch(error => {
+        console.error('[SMTM Menu] Failed to load config.json, using defaults:', error);
+        config = { ...DEFAULT_CONFIG };
+        return config;
       });
   }
 
@@ -134,6 +138,13 @@
     if (helpTexts.length > 0 && theme.menu.menuHelpText) {
       helpTexts.forEach(text => {
         applyThemeStyles(text, theme.menu, 'menuHelpText');
+        Object.assign(text.style, {
+          display: 'block',
+          whiteSpace: 'normal',
+          overflow: 'visible',
+          lineHeight: text.style.lineHeight || '1.5',
+          marginBottom: text.style.marginBottom || '8px'
+        });
       });
     }
   }
@@ -146,7 +157,7 @@
   }
 
   async function init() {
-    await loadThemes();
+    await Promise.all([loadThemes(), loadConfig()]);
     applyMenuStyles();
 
     const toggleButton = document.querySelector('.smtm-menu-toggle-button');
@@ -158,7 +169,7 @@
       };
 
       // Sync icon on popup open
-      const initialVisibility = localStorage.getItem('smtmPanelVisibility');
+      const initialVisibility = getVisibilityState();
       const icon = toggleButton.querySelector('img');
       if (icon) {
         updateToggleIcon(initialVisibility);
@@ -166,9 +177,9 @@
 
       toggleButton.addEventListener('click', () => {
         // Determine new state and save it
-        const currentVisibility = localStorage.getItem('smtmPanelVisibility');
+        const currentVisibility = getVisibilityState();
         const newVisibility = currentVisibility === 'hidden' ? 'visible' : 'hidden';
-        localStorage.setItem('smtmPanelVisibility', newVisibility);
+        setVisibilityState(newVisibility);
 
         // Send message to content script to toggle the panel
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -176,20 +187,20 @@
             chrome.tabs.sendMessage(tabs[0].id, { action: 'togglePanel' }, (response) => {
               if (chrome.runtime.lastError) {
                 console.error('Show Me The Money: Error sending message:', chrome.runtime.lastError.message);
-                localStorage.setItem('smtmPanelVisibility', currentVisibility);
+                setVisibilityState(currentVisibility);
                 updateToggleIcon(currentVisibility);
                 return;
               }
 
               if (!response || response.status === 'error') {
                 console.error('Show Me The Money: Toggle response error:', response?.message || 'unknown_error');
-                localStorage.setItem('smtmPanelVisibility', currentVisibility);
+                setVisibilityState(currentVisibility);
                 updateToggleIcon(currentVisibility);
                 return;
               }
 
               const resolvedVisibility = response.status === 'not_found' ? 'hidden' : response.status;
-              localStorage.setItem('smtmPanelVisibility', resolvedVisibility);
+              setVisibilityState(resolvedVisibility);
               updateToggleIcon(resolvedVisibility);
             });
           }

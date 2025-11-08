@@ -3,45 +3,76 @@
 (function() {
   'use strict';
 
+  const PANEL_ID = 'show-me-the-money-panel';
+  const DEFAULT_CONFIG = {
+    bar: {
+      sinceButton: true,
+      '1dButton': true,
+      '7dButton': true,
+      '30dButton': true,
+      total: true
+    }
+  };
+
+  // Create global namespace and debug helpers (only once)
+  if (!window.SMTM) window.SMTM = {};
+  if (!window.SMTM.debug) window.SMTM.debug = {};
+  if (typeof window.SMTM.DEBUG !== 'boolean') window.SMTM.DEBUG = true;
+
+  if (typeof window.SMTM.debug.log !== 'function') {
+    window.SMTM.debug.log = function(message, data) {
+      if (!window.SMTM.DEBUG) return;
+      console.log('[SMTM DEBUG] ' + message, (data ?? ''));
+    };
+  }
+
   // Re-injection guard - prevent multiple script injections
   if (window.__SMTM_CONTENT_ATTACHED__) {
-    console.log('[SMTM] Content script already attached, skipping re-injection');
+    window.SMTM.debug.log('[SMTM Core] Content script already attached, skipping re-injection');
     return;
   }
   window.__SMTM_CONTENT_ATTACHED__ = true;
 
-// Create global namespace and debug helpers (only once)
-if (!window.SMTM) window.SMTM = {};
-if (!window.SMTM.debug) window.SMTM.debug = {};
-if (typeof window.SMTM.DEBUG !== 'boolean') window.SMTM.DEBUG = true;
+  if (typeof window.SMTM.debug.group !== 'function') {
+    window.SMTM.debug.group = function(label) {
+      if (!window.SMTM.DEBUG) return;
+      console.group('🔍 [SMTM DEBUG] ' + label);
+    };
+  }
 
-if (typeof window.SMTM.debug.log !== 'function') {
-  window.SMTM.debug.log = function(message, data) {
-    if (!window.SMTM.DEBUG) return;
-    console.log('[SMTM DEBUG] ' + message, (data ?? ''));
-  };
-}
+  if (typeof window.SMTM.debug.groupEnd !== 'function') {
+    window.SMTM.debug.groupEnd = function() {
+      if (!window.SMTM.DEBUG) return;
+      console.groupEnd();
+    };
+  }
 
-if (typeof window.SMTM.debug.group !== 'function') {
-  window.SMTM.debug.group = function(label) {
-    if (!window.SMTM.DEBUG) return;
-    console.group('🔍 [SMTM DEBUG] ' + label);
-  };
-}
+  if (typeof window.SMTM.debug.table !== 'function') {
+    window.SMTM.debug.table = function(obj) {
+      if (!window.SMTM.DEBUG) return;
+      console.table(obj);
+    };
+  }
 
-if (typeof window.SMTM.debug.groupEnd !== 'function') {
-  window.SMTM.debug.groupEnd = function() {
-    if (!window.SMTM.DEBUG) return;
-    console.groupEnd();
-  };
-}
+  async function loadConfig() {
+    if (window.SMTM.config) {
+      return window.SMTM.config;
+    }
 
-if (typeof window.SMTM.debug.table !== 'function') {
-  window.SMTM.debug.table = function(obj) {
-    if (!window.SMTM.DEBUG) return;
-    console.table(obj);
-  };
-}
+    try {
+      const url = chrome.runtime.getURL('config.json');
+      window.SMTM.debug.log('[SMTM Config] Loading:', url);
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+      window.SMTM.config = await res.json();
+      window.SMTM.debug.log('Configuration loaded:', window.SMTM.config);
+    } catch (error) {
+      console.error('[SMTM] config.json not accessible; using defaults:', error);
+      window.SMTM.config = { ...DEFAULT_CONFIG };
+    }
+
+    return window.SMTM.config;
+  }
 
 /**
  * Enforces the 'hidden' state of the panel by hiding it and observing
@@ -69,7 +100,7 @@ function enforceHiddenState(panel) {
 
   // Create an observer to re-apply the hidden state if it's changed by other scripts
   const observer = new MutationObserver(() => {
-    if (localStorage.getItem('smtmPanelVisibility') === 'hidden' && panel.style.display !== 'none') {
+    if (getVisibilityState() === 'hidden' && panel.style.display !== 'none') {
       window.SMTM.debug.log('Panel visibility was changed externally. Re-enforcing hidden state.');
       hideAll();
     }
@@ -87,46 +118,24 @@ async function init() {
   window.SMTM.debug.log('URL:', window.location.href);
   window.SMTM.debug.log('Hostname:', window.location.hostname);
   window.SMTM.debug.groupEnd();
-  
-  console.log("Show Me The Money: Initializing...");
+  window.SMTM.debug.log('[SMTM Core] Initializing content script...');
 
-  // Wait for themes to be loaded
+  // Wait for themes and config to be loaded
   await loadThemes();
+  await loadConfig();
 
-  // Load configuration
-  try {
-    const url = chrome.runtime.getURL('config.json');
-    console.log('[SMTM config] URL:', url);
-    const res = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-    window.SMTM.config = await res.json();
-    window.SMTM.debug.log('Configuration loaded:', window.SMTM.config);
-  } catch (error) {
-    console.error('[SMTM] config.json not accessible; using defaults:', error);
-    // Define a default config to prevent errors if loading fails
-    window.SMTM.config = {
-      "bar": {
-        "sinceButton": true,
-        "1dButton": true,
-        "7dButton": true,
-        "30dButton": true,
-        "total": true
-      }
-    };
-  }
-
-  const storedVisibility = localStorage.getItem('smtmPanelVisibility');
+  const storedVisibility = getVisibilityState();
   const shouldRenderPanel = storedVisibility !== 'hidden';
 
   if (!shouldRenderPanel) {
-    console.log('[SMTM Init] Panel hidden — skipping render due to stored state.');
+    window.SMTM.debug.log('[SMTM Core] Panel hidden — skipping render due to stored state.');
   }
 
   const theme = window.location.hostname.includes('cursor.com') ? 'cursor' : 'dark';
 
   // Create the panel and insert it into the DOM when appropriate
-  let panel = null;
-  if (shouldRenderPanel) {
+  let panel = document.getElementById(PANEL_ID);
+  if (shouldRenderPanel && !panel) {
     panel = await createPanel(theme);
   }
 
@@ -154,6 +163,8 @@ async function init() {
   if (panel) {
     updateSinceButtonText();
   }
+
+  window.SMTM.debug.log('[SMTM] Refactor completed successfully.');
 }
 
 /**
@@ -163,25 +174,17 @@ function updateSinceButtonText() {
   const sinceButton = document.querySelector('.smtm-since-button');
   if (!sinceButton) return;
 
-  let selectedDate;
-  const savedDate = localStorage.getItem('smtmSelectedDate');
+  const savedDate = getStoredDate();
+  let selectedDate = savedDate ? new Date(savedDate) : null;
 
-  if (savedDate) {
-    const [year, month, day] = savedDate.split('-').map(Number);
-    selectedDate = new Date(year, month - 1, day);
-  } else {
+  if (!selectedDate || Number.isNaN(selectedDate.getTime())) {
     const today = new Date();
     selectedDate = new Date(today.getFullYear(), today.getMonth(), 1);
-    const year = selectedDate.getFullYear();
-    const month = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
-    const day = selectedDate.getDate().toString().padStart(2, '0');
-    localStorage.setItem('smtmSelectedDate', `${year}-${month}-${day}`);
+    setStoredDate(selectedDate);
   }
 
-  const day = selectedDate.getDate();
-  const month = selectedDate.toLocaleString('default', { month: 'short' });
-
-  sinceButton.innerText = `Since: ${day} ${month}`;
+  const label = formatDateShort(selectedDate) || 'N/A';
+  sinceButton.innerText = `Since: ${label}`;
 }
 
 // Expose the function to be called from other scripts like calendar.js
@@ -252,7 +255,7 @@ function setupTableObserver() {
       window.SMTM.debug.group('MutationObserver - Debounced execution');
       window.SMTM.debug.log('Timestamp:', new Date().toISOString());
       
-      console.log("Show Me The Money: Table changed, reprocessing...");
+      window.SMTM.debug.log('[SMTM Core] Table changed, reprocessing...');
       blinkDebugBadge(); // Visual indicator
       
       // Set processing flag
@@ -308,17 +311,17 @@ function setupTableObserver() {
           });
           window.SMTM.debug.log('✅ Observer started successfully');
           window.SMTM.debug.log('Observer config: { childList: true, subtree: true, characterData: true, characterDataOldValue: false, attributes: false }');
-          console.log("Show Me The Money: Observer started on table tbody with React virtual DOM detection.");
+          window.SMTM.debug.log('[SMTM Core] Observer started on table tbody with React virtual DOM detection.');
           
           // Store observer reference for potential cleanup
           window.SMTM.tableObserver = observer;
       } else {
           window.SMTM.debug.log('❌ Could not find tbody or suitable target');
-          console.log("Show Me The Money: Could not find a suitable node to observe for table changes.");
+          window.SMTM.debug.log('[SMTM Core] Could not find a suitable node to observe for table changes.');
       }
   } else {
       window.SMTM.debug.log('❌ No table container found');
-      console.log("Show Me The Money: No table container found to observe.");
+      window.SMTM.debug.log('[SMTM Core] No table container found to observe.');
       
       // Set up a delayed retry mechanism to find and observe the table
       window.SMTM.debug.log('Setting up delayed table detection (retry in 2s, 5s, 10s)...');
@@ -411,7 +414,7 @@ function setupIntegrityCheck() {
         window.SMTM.debug.group('Integrity Check - Debounced execution');
         window.SMTM.debug.log('Timestamp:', new Date().toISOString());
         
-        console.log("Show Me The Money: Integrity check detected changes, reprocessing...");
+        window.SMTM.debug.log('[SMTM Core] Integrity check detected changes, reprocessing...');
         blinkDebugBadge(); // Visual indicator
         
         // Set processing flag
@@ -435,7 +438,7 @@ function setupIntegrityCheck() {
   
   window.SMTM.debug.log('✅ Integrity check started');
   window.SMTM.debug.log(`Check interval: ${CHECK_INTERVAL}ms, Debounce: ${DEBOUNCE_DELAY}ms`);
-  console.log("Show Me The Money: Periodic integrity check started (every 2s).");
+  window.SMTM.debug.log('[SMTM Core] Periodic integrity check started (every 2s).');
   
   window.SMTM.debug.groupEnd();
 }
@@ -502,7 +505,7 @@ function setupScrollListener() {
         window.SMTM.debug.group('Scroll Listener - Debounced execution');
         window.SMTM.debug.log('Timestamp:', new Date().toISOString());
         
-        console.log("Show Me The Money: Scroll detected new rows, reprocessing...");
+        window.SMTM.debug.log('[SMTM Core] Scroll detected new rows, reprocessing...');
         blinkDebugBadge(); // Visual indicator
         
         // Set processing flag
@@ -538,7 +541,7 @@ function setupScrollListener() {
   
   window.SMTM.debug.log('✅ Scroll listener started');
   window.SMTM.debug.log(`Debounce delay: ${DEBOUNCE_DELAY}ms`);
-  console.log("Show Me The Money: Scroll listener started (debounced 1s).");
+  window.SMTM.debug.log('[SMTM Core] Scroll listener started (debounced 1s).');
   
   window.SMTM.debug.groupEnd();
 }
@@ -589,7 +592,7 @@ async function processTransactions() {
   window.SMTM.debug.log('New/updated entries count:', newEntriesCount);
   
   if (newEntriesCount > 0) {
-    console.log(`Show Me The Money: Added/updated ${newEntriesCount} entries.`);
+    window.SMTM.debug.log(`[SMTM Core] Added/updated ${newEntriesCount} entries.`);
   } else {
     window.SMTM.debug.log('⚠️ No new entries were added to storage');
   }
@@ -608,13 +611,14 @@ window.updateTotalDisplay = function(startDate, endDate) {
   const history = getHistory();
 
   if (!startDate) {
-    const savedDate = localStorage.getItem('smtmSelectedDate');
+    const savedDate = getStoredDate();
     if (savedDate) {
-      const [year, month, day] = savedDate.split('-').map(Number);
-      startDate = new Date(year, month - 1, day);
-    } else {
+      startDate = new Date(savedDate);
+    }
+    if (!startDate || Number.isNaN(startDate.getTime())) {
       const today = new Date();
       startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+      setStoredDate(startDate);
     }
   }
 
@@ -630,22 +634,25 @@ window.updateTotalDisplay = function(startDate, endDate) {
     return transactionDate >= startDate && transactionDate <= endDate;
   });
 
-  const currencySymbol = window.location.hostname.includes('cursor.com') ? '$' : '';
-  const theme = window.location.hostname.includes('cursor.com') ? 'cursor' : 'dark';
+  const isCursorHost = window.location.hostname.includes('cursor.com');
+  const currencySymbol = isCursorHost ? '$' : '';
+  const themeName = isCursorHost ? 'cursor' : 'dark';
+  const total = filteredHistory.reduce((sum, t) => sum + t.amount, 0);
+  updateTotal(total, currencySymbol);
 
-  if (filteredHistory.length > 0) {
-    const total = filteredHistory.reduce((sum, t) => sum + t.amount, 0);
-    updateTotal(total, currencySymbol);
-  } else {
-    updateTotal("Not enough data for selected period");
-  }
-
-  const missingDays = checkForMissingDays(history, startDate, endDate);
+  const hasData = filteredHistory.length > 0;
+  const missingDays = hasData ? checkForMissingDays(history, startDate, endDate) : [];
   const today = new Date();
-  if (today.getDate() > 3) {
-    toggleMissingDataLabel(theme, missingDays);
-  } else {
-    toggleMissingDataLabel(theme, []);
+  try {
+    if (!hasData) {
+      toggleMissingDataLabel(themeName, [], { forceShow: true });
+    } else if (today.getDate() > 3) {
+      toggleMissingDataLabel(themeName, missingDays);
+    } else {
+      toggleMissingDataLabel(themeName, []);
+    }
+  } catch (error) {
+    window.SMTM?.debug?.log('[SMTM Tip] toggle failed, using safe no-op', error?.message || error);
   }
 }
 
@@ -701,24 +708,29 @@ function blinkDebugBadge() {
   }, 300);
 }
 
-// Ensure the script runs after the page has fully loaded
+  function bootstrap() {
+    if (window.__SMTM_INIT_STARTED__) return;
+    window.__SMTM_INIT_STARTED__ = true;
+    window.SMTM.debug.log('[SMTM Init] Bootstrap triggered');
+
+    try {
+      createDebugBadge();
+      init();
+    } catch (error) {
+      console.error('[SMTM Init] Initialization failed:', error);
+    }
+  }
+
+  // Ensure the script runs after the page has fully loaded
   if (document.readyState === 'loading') {
     window.SMTM.debug.log('⏳ Waiting for DOMContentLoaded...');
     document.addEventListener('DOMContentLoaded', () => {
       window.SMTM.debug.log('✅ DOMContentLoaded fired');
-      createDebugBadge();
-      init();
+      bootstrap();
     });
   } else {
     window.SMTM.debug.log('✅ DOM already ready');
-    // Create debug badge immediately if DOM is ready
-    if (document.body) {
-      createDebugBadge();
-    } else {
-      // Wait a bit if body isn't ready yet
-      setTimeout(createDebugBadge, 100);
-    }
-    init();
+    bootstrap();
   }
   
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -738,35 +750,20 @@ function blinkDebugBadge() {
     if (request.action === 'togglePanel') {
       (async () => {
         try {
-          const currentVisibility = localStorage.getItem('smtmPanelVisibility') || 'visible';
+          const currentVisibility = getVisibilityState();
           const newVisibility = currentVisibility === 'hidden' ? 'visible' : 'hidden';
-          let panel = document.getElementById('smtm-cursor-panel') || document.getElementById('show-me-the-money-panel');
+          let panel = document.getElementById(PANEL_ID);
 
           if (!panel && newVisibility === 'visible') {
             await loadThemes();
-            // Ensure config is loaded before creating the panel
-            if (!window.SMTM.config) {
-              try {
-                const url = chrome.runtime.getURL('config.json');
-                console.log('[SMTM config] URL:', url);
-                const res = await fetch(url, { cache: 'no-store' });
-                if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-                window.SMTM.config = await res.json();
-                window.SMTM.debug.log('Configuration loaded during toggle:', window.SMTM.config);
-              } catch (error) {
-                console.error('[SMTM] config.json not accessible; using defaults:', error);
-                window.SMTM.config = {
-                  "bar": { "sinceButton": true, "1dButton": true, "7dButton": true, "30dButton": true, "total": true }
-                };
-              }
-            }
+            await loadConfig();
             const theme = window.location.hostname.includes('cursor.com') ? 'cursor' : 'dark';
             panel = await createPanel(theme);
             updateTotalDisplay();
           }
 
           if (!panel) {
-            localStorage.setItem('smtmPanelVisibility', 'hidden');
+            setVisibilityState('hidden');
             sendResponse({ status: 'not_found' });
             return;
           }
@@ -800,7 +797,7 @@ function blinkDebugBadge() {
             }
           }
 
-          localStorage.setItem('smtmPanelVisibility', newVisibility);
+          setVisibilityState(newVisibility);
 
           sendResponse({ status: newVisibility });
         } catch (error) {

@@ -1,5 +1,61 @@
 // utils/storage.js
 
+function formatDateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function normalizeDateInput(value) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return formatDateKey(value);
+  }
+  if (typeof value === 'string' && value.trim().length > 0) {
+    return value;
+  }
+  return null;
+}
+
+/**
+ * Returns the stored date used for the "Since" range.
+ * @returns {string|null} ISO-like date string.
+ */
+function getStoredDate() {
+  return localStorage.getItem('smtmSelectedDate');
+}
+
+/**
+ * Persists the selected date in localStorage.
+ * @param {string|Date} value - Date string or object.
+ * @returns {string|null} Stored value for chaining.
+ */
+function setStoredDate(value) {
+  const normalized = normalizeDateInput(value);
+  if (!normalized) return null;
+  localStorage.setItem('smtmSelectedDate', normalized);
+  return normalized;
+}
+
+/**
+ * Returns the stored visibility state for the floating panel.
+ * @returns {string} Either 'visible' or 'hidden'.
+ */
+function getVisibilityState() {
+  return localStorage.getItem('smtmPanelVisibility') || 'visible';
+}
+
+/**
+ * Sets the visibility state for the floating panel.
+ * @param {string} state - Desired state.
+ * @returns {string} Persisted state value.
+ */
+function setVisibilityState(state) {
+  const normalized = state === 'hidden' ? 'hidden' : 'visible';
+  localStorage.setItem('smtmPanelVisibility', normalized);
+  return normalized;
+}
+
 /**
  * Retrieves daily usage data from localStorage.
  * @returns {Object} An object mapping dates (YYYY-MM-DD) to daily costs.

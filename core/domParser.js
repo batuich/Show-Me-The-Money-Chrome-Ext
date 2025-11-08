@@ -262,7 +262,7 @@ async function parseTransactionTable() {
     if (divTable) {
         log('✅ Found div-based table:', divTable);
         groupEnd();
-        console.log("Show Me The Money: Found div-based table.");
+        log('[SMTM Core] Found div-based table.');
         return parseDivTable(divTable);
     }
 
@@ -299,12 +299,12 @@ async function parseTransactionTable() {
         log('Total shadow roots found:', shadowRootCount);
         
         groupEnd();
-        console.log("Show Me The Money: No recognizable transaction table found.");
+        log('[SMTM Core] No recognizable transaction table found.');
         return {};
     }
 
     log('✅ Found HTML table:', htmlTable);
     groupEnd();
-    console.log("Show Me The Money: Found HTML table.");
+    log('[SMTM Core] Found HTML table.');
     return await parseHtmlTable(htmlTable);
 }

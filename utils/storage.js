@@ -1,10 +1,12 @@
-// utils/storage.js
+/**
+ * @fileoverview This file contains helper functions for interacting with localStorage.
+ */
 
 /**
  * Retrieves daily usage data from localStorage.
  * @returns {Object} An object mapping dates (YYYY-MM-DD) to daily costs.
  */
-function getDailyUsageData() {
+export function getDailyUsageData() {
   const data = localStorage.getItem('smtmUsageDaily');
   return data ? JSON.parse(data) : {};
 }
@@ -13,7 +15,7 @@ function getDailyUsageData() {
  * Saves daily usage data to localStorage.
  * @param {Object} data An object mapping dates to daily costs.
  */
-function saveDailyUsageData(data) {
+export function saveDailyUsageData(data) {
   localStorage.setItem('smtmUsageDaily', JSON.stringify(data));
 }
 
@@ -22,7 +24,7 @@ function saveDailyUsageData(data) {
  * @param {Object} newData An object mapping dates to daily costs.
  * @returns {number} The number of new or updated entries.
  */
-function mergeDailyData(newData) {
+export function mergeDailyData(newData) {
   // Local aliases for debug logging
   const log = window.SMTM?.debug?.log || function() {};
   const group = window.SMTM?.debug?.group || function() {};
@@ -81,7 +83,7 @@ function mergeDailyData(newData) {
  * Retrieves all transaction history from localStorage (legacy support).
  * @returns {Array} An array of transaction objects.
  */
-function getHistory() {
+export function getHistory() {
   // First try to get from the new daily format
   const dailyData = getDailyUsageData();
   if (Object.keys(dailyData).length > 0) {
@@ -102,7 +104,7 @@ function getHistory() {
  * Saves the transaction history to localStorage (legacy support).
  * @param {Array} history An array of transaction objects.
  */
-function saveHistory(history) {
+export function saveHistory(history) {
   localStorage.setItem('transactionHistory', JSON.stringify(history));
 }
 
@@ -111,7 +113,7 @@ function saveHistory(history) {
  * @param {Object} transaction The transaction object to add.
  * @returns {boolean} True if the transaction was added, false otherwise.
  */
-function addTransaction(transaction) {
+export function addTransaction(transaction) {
   const history = getHistory();
   const isDuplicate = history.some(t => t.id === transaction.id);
   if (!isDuplicate) {
@@ -126,7 +128,7 @@ function addTransaction(transaction) {
  * Retrieves the saved panel position from localStorage.
  * @returns {Object|null} An object with top and left properties, or null.
  */
-function getPanelPosition() {
+export function getPanelPosition() {
   const position = localStorage.getItem('panelPosition');
   return position ? JSON.parse(position) : null;
 }
@@ -135,7 +137,7 @@ function getPanelPosition() {
  * Saves the panel position to localStorage.
  * @param {Object} position An object with top and left properties.
  */
-function savePanelPosition(position) {
+export function savePanelPosition(position) {
   localStorage.setItem('panelPosition', JSON.stringify(position));
 }
 
@@ -143,7 +145,7 @@ function savePanelPosition(position) {
  * Retrieves the selected range from localStorage.
  * @returns {string|null} The saved range ('1d', '7d', '30d') or null.
  */
-function getSelectedRange() {
+export function getSelectedRange() {
   return localStorage.getItem('selectedRange');
 }
 
@@ -151,6 +153,6 @@ function getSelectedRange() {
  * Saves the selected range to localStorage.
  * @param {string} range The range to save.
  */
-function saveSelectedRange(range) {
+export function saveSelectedRange(range) {
   localStorage.setItem('selectedRange', range);
 }

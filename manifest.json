@@ -13,12 +13,7 @@
         "https://cursor.com/dashboard*"
       ],
       "js": [
-        "utils/storage.js",
-        "utils/domParser.js",
-        "utils/dateHelpers.js",
-        "utils/uiHelpers.js",
-        "utils/calendar.js",
-        "content.js"
+        "loader.js"
       ],
       "css": []
     }
@@ -29,12 +24,21 @@
       "themes.json",
       "assets/icons/arrow-down.svg",
       "assets/icons/eye-open.svg",
-      "assets/icons/eye-closed.svg"
+      "assets/icons/eye-closed.svg",
+      "core/init.js",
+      "core/main.js",
+      "core/observer.js",
+      "ui/panel.js",
+      "ui/calendar.js",
+      "ui/theme.js",
+      "utils/date.js",
+      "utils/dom.js",
+      "utils/storage.js"
     ],
     "matches": ["<all_urls>"]
   }],
   "action": {
-    "default_popup": "menu/index.html",
+    "default_popup": "ui/menu/index.html",
     "default_icon": {
       "16": "assets/icons/icon16.png",
       "48": "assets/icons/icon48.png",

@@ -1,4 +1,6 @@
-// utils/domParser.js
+/**
+ * @fileoverview This file contains helper functions for parsing the DOM to extract transaction data.
+ */
 
 // Local aliases for convenience (optional - direct window.SMTM.debug calls work too)
 var log = window.SMTM?.debug?.log || function() {};
@@ -251,7 +253,7 @@ async function parseHtmlTable(tableElement) {
  * Parses the transaction table on the page, supporting multiple structures.
  * @returns {Promise<Object|Array>} An object mapping dates to costs for HTML tables, or an array of transaction objects for div tables.
  */
-async function parseTransactionTable() {
+export async function parseTransactionTable() {
     group('parseTransactionTable - Table detection');
     log('Timestamp:', new Date().toISOString());
     log('document.readyState:', document.readyState);

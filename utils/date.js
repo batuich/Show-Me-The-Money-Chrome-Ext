@@ -1,4 +1,6 @@
-// utils/dateHelpers.js
+/**
+ * @fileoverview This file contains helper functions for date manipulation and formatting.
+ */
 
 /**
  * Checks for missing days in the transaction history within a given date range.
@@ -7,7 +9,7 @@
  * @param {Date} endDate The end of the date range.
  * @returns {Array<string>} An array of missing date strings.
  */
-function checkForMissingDays(history, startDate, endDate) {
+export function checkForMissingDays(history, startDate, endDate) {
   const missingDays = [];
   const recordedDates = new Set(history.map(t => new Date(t.date).toDateString()));
 
@@ -27,7 +29,7 @@ function checkForMissingDays(history, startDate, endDate) {
  * @param {string[]} missingDays - An array of date strings (e.g., "9/26/2025").
  * @returns {string} A formatted string of dates and date ranges (e.g., "26-09-2025, 29-09-2025, 01-10 to 03-10-2025").
  */
-function groupConsecutiveDates(missingDays) {
+export function groupConsecutiveDates(missingDays) {
     if (!missingDays || missingDays.length === 0) {
         return "";
     }
@@ -85,7 +87,7 @@ function groupConsecutiveDates(missingDays) {
  * @param {string} preset - The preset ('1d', '7d', '30d').
  * @returns {string} The formatted date string.
  */
-function formatTooltipDate(preset) {
+export function formatTooltipDate(preset) {
     const now = new Date();
     const day = String(now.getDate()).padStart(2, '0');
     const month = String(now.getMonth() + 1).padStart(2, '0');

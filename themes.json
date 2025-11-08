@@ -66,8 +66,8 @@
 		},
 		"panelSinceButton": {
 			"default": {
-				"backgroundColor": "transparent",
-				"color": "#B5B5B6",
+				"backgroundColor": "#1B1912",
+				"color": "#FFFFFF",
 				"padding": "6px 10px",
 				"borderRadius": 4
 			},
@@ -82,9 +82,9 @@
 		},
 		"totalBlock": {
 			"default": {
-				"backgroundColor": "#1E1C15",
+				"backgroundColor": "transparent",
 				"borderRadius": 4,
-				"padding": "6px 10px"
+				"padding": "6px 6px"
 			}
 		},
 		"totalLabel": {

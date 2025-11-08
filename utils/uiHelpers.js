@@ -140,6 +140,9 @@ async function createPanel(themeName = 'dark') {
         return null;
     }
 
+    // Ensure config is available
+    const panelConfig = window.SMTM.config?.bar || {};
+
     const panel = document.createElement('div');
     panel.id = 'show-me-the-money-panel';
     applyThemeStyles(panel, theme, 'base');
@@ -153,14 +156,22 @@ async function createPanel(themeName = 'dark') {
     });
 
     const dragHandle = createDragHandle(theme);
-    const sinceButton = createSinceButton(theme);
-    const presetsContainer = createPresetButtons(theme);
-    const totalDisplay = createTotalDisplay(theme);
-
     panel.appendChild(dragHandle);
-    panel.appendChild(sinceButton);
-    panel.appendChild(presetsContainer);
-    panel.appendChild(totalDisplay);
+
+    if (panelConfig.sinceButton) {
+        const sinceButton = createSinceButton(theme);
+        panel.appendChild(sinceButton);
+    }
+
+    const presetsContainer = createPresetButtons(theme, panelConfig);
+    if (presetsContainer) {
+        panel.appendChild(presetsContainer);
+    }
+
+    if (panelConfig.total) {
+        const totalDisplay = createTotalDisplay(theme);
+        panel.appendChild(totalDisplay);
+    }
 
     makeDraggable(panel, dragHandle);
 
@@ -247,15 +258,22 @@ function createDragHandle(theme) {
     return handle;
 }
 
-function createPresetButtons(theme) {
+function createPresetButtons(theme, panelConfig) {
+    const presets = [];
+    if (panelConfig['1dButton']) presets.push('1d');
+    if (panelConfig['7dButton']) presets.push('7d');
+    if (panelConfig['30dButton']) presets.push('30d');
+
+    if (presets.length === 0) {
+        return null; // Don't create the container if no buttons are enabled
+    }
+
     const container = document.createElement('div');
     container.id = 'smtm-presets-container';
     Object.assign(container.style, {
         display: 'flex',
         gap: theme.common.spacing
     });
-
-    const presets = ['1d', '7d', '30d'];
 
     presets.forEach(preset => {
         const button = document.createElement('button');

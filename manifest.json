@@ -23,19 +23,16 @@
       "css": []
     }
   ],
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "themes.json",
-        "assets/icons/arrow-down.svg",
-        "assets/icons/eye-open.svg",
-        "assets/icons/eye-closed.svg"
-      ],
-      "matches": [
-        "https://cursor.com/*"
-      ]
-    }
-  ],
+  "web_accessible_resources": [{
+    "resources": [
+      "config.json",
+      "themes.json",
+      "assets/icons/arrow-down.svg",
+      "assets/icons/eye-open.svg",
+      "assets/icons/eye-closed.svg"
+    ],
+    "matches": ["<all_urls>"]
+  }],
   "action": {
     "default_popup": "menu/index.html",
     "default_icon": {

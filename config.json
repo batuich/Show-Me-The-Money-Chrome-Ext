@@ -1,0 +1,9 @@
+{
+  "bar": {
+    "sinceButton": true,
+    "1dButton": false,
+    "7dButton": false,
+    "30dButton": false,
+    "total": true
+  }
+}

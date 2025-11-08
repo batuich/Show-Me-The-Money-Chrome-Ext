@@ -93,6 +93,28 @@ async function init() {
   // Wait for themes to be loaded
   await loadThemes();
 
+  // Load configuration
+  try {
+    const url = chrome.runtime.getURL('config.json');
+    console.log('[SMTM config] URL:', url);
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+    window.SMTM.config = await res.json();
+    window.SMTM.debug.log('Configuration loaded:', window.SMTM.config);
+  } catch (error) {
+    console.error('[SMTM] config.json not accessible; using defaults:', error);
+    // Define a default config to prevent errors if loading fails
+    window.SMTM.config = {
+      "bar": {
+        "sinceButton": true,
+        "1dButton": true,
+        "7dButton": true,
+        "30dButton": true,
+        "total": true
+      }
+    };
+  }
+
   const storedVisibility = localStorage.getItem('smtmPanelVisibility');
   const shouldRenderPanel = storedVisibility !== 'hidden';
 
@@ -722,6 +744,22 @@ function blinkDebugBadge() {
 
           if (!panel && newVisibility === 'visible') {
             await loadThemes();
+            // Ensure config is loaded before creating the panel
+            if (!window.SMTM.config) {
+              try {
+                const url = chrome.runtime.getURL('config.json');
+                console.log('[SMTM config] URL:', url);
+                const res = await fetch(url, { cache: 'no-store' });
+                if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+                window.SMTM.config = await res.json();
+                window.SMTM.debug.log('Configuration loaded during toggle:', window.SMTM.config);
+              } catch (error) {
+                console.error('[SMTM] config.json not accessible; using defaults:', error);
+                window.SMTM.config = {
+                  "bar": { "sinceButton": true, "1dButton": true, "7dButton": true, "30dButton": true, "total": true }
+                };
+              }
+            }
             const theme = window.location.hostname.includes('cursor.com') ? 'cursor' : 'dark';
             panel = await createPanel(theme);
             updateTotalDisplay();

@@ -533,10 +533,10 @@ function makeDraggable(element, handle) {
 function updateTotal(total, currencySymbol = '') {
     const totalValue = document.getElementById('smtm-total-value');
     if (totalValue) {
-        if (typeof total === 'number') {
+        if (typeof total === 'number' && total > 0) {
             totalValue.innerText = `${currencySymbol}${total.toFixed(2)}`;
         } else {
-            totalValue.innerText = total;
+            totalValue.innerText = `${currencySymbol}0.00`;
         }
     }
 }

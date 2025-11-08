@@ -197,6 +197,10 @@ function createSinceButton(theme) {
     applyThemeStyles(button, theme, 'panelSinceButton');
     button.style.cursor = 'pointer';
     button.style.border = 'none';
+    button.style.whiteSpace = 'nowrap';
+    button.style.display = 'inline-flex';
+    button.style.alignItems = 'center';
+    button.style.justifyContent = 'center';
 
     button.onmouseover = () => {
         applyThemeStyles(button, theme, 'panelSinceButton', 'hover');

@@ -2,10 +2,6 @@
  * @fileoverview This file is the main entry point for the extension's content script.
  */
 
-import { parseTransactionTable } from '/utils/dom.js';
-import { addTransaction, getDailyUsageData, mergeDailyData } from '/utils/storage.js';
-import { updateTotalDisplay, enforceHiddenState, updateSinceButtonText, createPanel } from '/ui/panel.js';
-import { loadThemes } from '/ui/theme.js';
 
 // Re-injection guard - prevent multiple script injections
 if (window.__SMTM_CONTENT_ATTACHED__) {
@@ -49,11 +45,11 @@ if (window.__SMTM_CONTENT_ATTACHED__) {
   /**
    * Parses the transaction table, updates the storage, and refreshes the UI.
    */
-  export async function processTransactions() {
+  window.SMTM.processTransactions = async function() {
     window.SMTM.debug.group('processTransactions');
     window.SMTM.debug.log('Timestamp:', new Date().toISOString());
 
-    const parsedData = await parseTransactionTable();
+    const parsedData = await window.SMTM.parseTransactionTable();
     window.SMTM.debug.log('Parsed data type:', Array.isArray(parsedData) ? 'Array' : typeof parsedData);
     window.SMTM.debug.log('Parsed data:', parsedData);
 
@@ -66,7 +62,7 @@ if (window.__SMTM_CONTENT_ATTACHED__) {
         window.SMTM.debug.log('Array length:', parsedData.length);
         // Legacy transaction array format
         parsedData.forEach(t => {
-          if (addTransaction(t)) {
+          if (window.SMTM.addTransaction(t)) {
             newEntriesCount++;
           }
         });
@@ -75,15 +71,15 @@ if (window.__SMTM_CONTENT_ATTACHED__) {
         window.SMTM.debug.log('📊 Parsed rows count:', Object.keys(parsedData).length);
 
         // Get existing data before merge
-        const existingData = getDailyUsageData();
+        const existingData = window.SMTM.getDailyUsageData();
         const beforeMergeCount = Object.keys(existingData).length;
         window.SMTM.debug.log('📦 Unique days BEFORE merge:', beforeMergeCount);
 
         // New daily data format
-        newEntriesCount = mergeDailyData(parsedData);
+        newEntriesCount = window.SMTM.mergeDailyData(parsedData);
 
         // Get data after merge
-        const afterMergeData = getDailyUsageData();
+        const afterMergeData = window.SMTM.getDailyUsageData();
         const afterMergeCount = Object.keys(afterMergeData).length;
         window.SMTM.debug.log('📦 Unique days AFTER merge:', afterMergeCount);
         window.SMTM.debug.log('✨ New or updated entries:', newEntriesCount);
@@ -101,11 +97,11 @@ if (window.__SMTM_CONTENT_ATTACHED__) {
     }
 
     // Check current storage state
-    const currentData = getDailyUsageData();
+    const currentData = window.SMTM.getDailyUsageData();
     window.SMTM.debug.log('Current localStorage data:', currentData);
     window.SMTM.debug.log('Total dates in storage:', Object.keys(currentData).length);
 
-    updateTotalDisplay(); // Initial display with default range
+    window.SMTM.updateTotalDisplay(); // Initial display with default range
     window.SMTM.debug.groupEnd();
   }
 
@@ -115,8 +111,8 @@ if (window.__SMTM_CONTENT_ATTACHED__) {
       localStorage.clear();
 
       // Now, update the UI to reflect the cleared data.
-      if (window.updateTotalDisplay) {
-        window.updateTotalDisplay();
+      if (window.SMTM.updateTotalDisplay) {
+        window.SMTM.updateTotalDisplay();
       }
 
       sendResponse({ status: 'cleared_and_updated' });
@@ -131,7 +127,7 @@ if (window.__SMTM_CONTENT_ATTACHED__) {
           let panel = document.getElementById('smtm-cursor-panel') || document.getElementById('show-me-the-money-panel');
 
           if (!panel && newVisibility === 'visible') {
-            await loadThemes();
+            await window.SMTM.loadThemes();
             // Ensure config is loaded before creating the panel
             if (!window.SMTM.config) {
               try {
@@ -149,8 +145,8 @@ if (window.__SMTM_CONTENT_ATTACHED__) {
               }
             }
             const theme = window.location.hostname.includes('cursor.com') ? 'cursor' : 'dark';
-            panel = await createPanel(theme);
-            updateTotalDisplay();
+            panel = await window.SMTM.createPanel(theme);
+            window.SMTM.updateTotalDisplay();
           }
 
           if (!panel) {
@@ -179,7 +175,7 @@ if (window.__SMTM_CONTENT_ATTACHED__) {
             if (infoTooltipContainer) {
               infoTooltipContainer.style.display = 'none';
             }
-            enforceHiddenState(panel);
+            window.SMTM.enforceHiddenState(panel);
           } else {
             // Show panel and missing data container (if it exists)
             panel.style.display = 'flex';

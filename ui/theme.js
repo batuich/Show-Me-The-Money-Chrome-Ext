@@ -8,7 +8,7 @@ let themes = {};
  * Fetches and stores themes from themes.json.
  * @returns {Promise<void>} A promise that resolves when themes are loaded.
  */
-export function loadThemes() {
+window.SMTM.loadThemes = function() {
   return fetch(chrome.runtime.getURL('themes.json'))
     .then(response => response.json())
     .then(data => {
@@ -24,7 +24,7 @@ export function loadThemes() {
  * @param {string} themeKey The key of the style to apply.
  * @param {string} [state="default"] The state of the element (e.g., "hover").
  */
-export function applyThemeStyles(el, themeName, themeKey, state = "default") {
+window.SMTM.applyThemeStyles = function(el, themeName, themeKey, state = "default") {
     const theme = themes[themeName];
     if (!theme) {
         console.error(`Show Me The Money: Theme "${themeName}" not found.`);
@@ -54,6 +54,6 @@ export function applyThemeStyles(el, themeName, themeKey, state = "default") {
  * @param {string} themeName The name of the theme to get.
  * @returns {object|null} The theme object or null if not found.
  */
-export function getTheme(themeName) {
+window.SMTM.getTheme = function(themeName) {
     return themes[themeName] || null;
 }

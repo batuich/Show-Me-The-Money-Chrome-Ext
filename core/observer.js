@@ -2,13 +2,10 @@
  * @fileoverview This file contains the logic for observing changes to the DOM, including the transaction table and scroll events.
  */
 
-import { processTransactions } from '/core/main.js';
-import { blinkDebugBadge } from '/ui/panel.js';
-
 /**
  * Sets up a MutationObserver to watch for table changes with debouncing.
  */
-export function setupTableObserver() {
+window.SMTM.setupTableObserver = function() {
   window.SMTM.debug.group('Setting up MutationObserver');
 
   // Debounce timer
@@ -71,13 +68,13 @@ export function setupTableObserver() {
       window.SMTM.debug.log('Timestamp:', new Date().toISOString());
 
       console.log("Show Me The Money: Table changed, reprocessing...");
-      blinkDebugBadge(); // Visual indicator
+      window.SMTM.blinkDebugBadge(); // Visual indicator
 
       // Set processing flag
       isProcessing = true;
 
       // Process transactions
-      processTransactions().finally(() => {
+      window.SMTM.processTransactions().finally(() => {
         isProcessing = false;
         window.SMTM.debug.log('✅ Processing complete, ready for next mutation');
       });
@@ -147,9 +144,9 @@ export function setupTableObserver() {
               const table = document.querySelector('table.w-full');
               if (table && !window.SMTM.tableObserver) {
                   window.SMTM.debug.log('✅ Table found on retry! Setting up observer...');
-                  setupTableObserver(); // Recursively call to set up observer
-                  blinkDebugBadge();
-                  processTransactions();
+                  window.SMTM.setupTableObserver(); // Recursively call to set up observer
+                  window.SMTM.blinkDebugBadge();
+                  window.SMTM.processTransactions();
               } else if (window.SMTM.tableObserver) {
                   window.SMTM.debug.log('ℹ️ Observer already running');
               } else {
@@ -165,7 +162,7 @@ export function setupTableObserver() {
  * Sets up a periodic integrity check to detect React virtual DOM updates
  * that don't trigger DOM mutations.
  */
-export function setupIntegrityCheck() {
+window.SMTM.setupIntegrityCheck = function() {
   window.SMTM.debug.group('Setting up periodic integrity check');
 
   // Track previous state for comparison
@@ -230,13 +227,13 @@ export function setupIntegrityCheck() {
         window.SMTM.debug.log('Timestamp:', new Date().toISOString());
 
         console.log("Show Me The Money: Integrity check detected changes, reprocessing...");
-        blinkDebugBadge(); // Visual indicator
+        window.SMTM.blinkDebugBadge(); // Visual indicator
 
         // Set processing flag
         isProcessing = true;
 
         // Process transactions
-        processTransactions().finally(() => {
+        window.SMTM.processTransactions().finally(() => {
           isProcessing = false;
           window.SMTM.debug.log('✅ Integrity check processing complete');
         });
@@ -261,7 +258,7 @@ export function setupIntegrityCheck() {
 /**
  * Sets up a scroll listener to detect new rows appearing.
  */
-export function setupScrollListener() {
+window.SMTM.setupScrollListener = function() {
   window.SMTM.debug.group('Setting up scroll listener');
 
   // Track previous row count
@@ -321,13 +318,13 @@ export function setupScrollListener() {
         window.SMTM.debug.log('Timestamp:', new Date().toISOString());
 
         console.log("Show Me The Money: Scroll detected new rows, reprocessing...");
-        blinkDebugBadge(); // Visual indicator
+        window.SMTM.blinkDebugBadge(); // Visual indicator
 
         // Set processing flag
         isProcessing = true;
 
         // Process transactions
-        processTransactions().finally(() => {
+        window.SMTM.processTransactions().finally(() => {
           isProcessing = false;
           window.SMTM.debug.log('✅ Scroll processing complete');
         });

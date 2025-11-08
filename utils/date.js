@@ -9,7 +9,7 @@
  * @param {Date} endDate The end of the date range.
  * @returns {Array<string>} An array of missing date strings.
  */
-export function checkForMissingDays(history, startDate, endDate) {
+window.SMTM.checkForMissingDays = function(history, startDate, endDate) {
   const missingDays = [];
   const recordedDates = new Set(history.map(t => new Date(t.date).toDateString()));
 
@@ -29,7 +29,7 @@ export function checkForMissingDays(history, startDate, endDate) {
  * @param {string[]} missingDays - An array of date strings (e.g., "9/26/2025").
  * @returns {string} A formatted string of dates and date ranges (e.g., "26-09-2025, 29-09-2025, 01-10 to 03-10-2025").
  */
-export function groupConsecutiveDates(missingDays) {
+window.SMTM.groupConsecutiveDates = function(missingDays) {
     if (!missingDays || missingDays.length === 0) {
         return "";
     }
@@ -87,7 +87,7 @@ export function groupConsecutiveDates(missingDays) {
  * @param {string} preset - The preset ('1d', '7d', '30d').
  * @returns {string} The formatted date string.
  */
-export function formatTooltipDate(preset) {
+window.SMTM.formatTooltipDate = function(preset) {
     const now = new Date();
     const day = String(now.getDate()).padStart(2, '0');
     const month = String(now.getMonth() + 1).padStart(2, '0');

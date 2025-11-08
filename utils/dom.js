@@ -253,7 +253,7 @@ async function parseHtmlTable(tableElement) {
  * Parses the transaction table on the page, supporting multiple structures.
  * @returns {Promise<Object|Array>} An object mapping dates to costs for HTML tables, or an array of transaction objects for div tables.
  */
-export async function parseTransactionTable() {
+window.SMTM.parseTransactionTable = async function() {
     group('parseTransactionTable - Table detection');
     log('Timestamp:', new Date().toISOString());
     log('document.readyState:', document.readyState);

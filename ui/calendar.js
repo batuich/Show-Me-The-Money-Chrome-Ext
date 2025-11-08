@@ -2,8 +2,6 @@
  * @fileoverview This file contains the logic for creating and managing the calendar popup.
  */
 
-import { applyThemeStyles, getTheme } from '/ui/theme.js';
-
 let currentCalendar = null;
 
 /**
@@ -11,14 +9,14 @@ let currentCalendar = null;
  * @param {HTMLElement} anchorElement - The element to position the calendar relative to.
  * @param {string} themeName - The name of the theme to use.
  */
-export async function createCalendarPopup(anchorElement, themeName = 'cursor') {
+window.SMTM.createCalendarPopup = async function(anchorElement, themeName = 'cursor') {
   if (currentCalendar) {
     currentCalendar.remove();
     currentCalendar = null;
     return;
   }
 
-  const theme = getTheme(themeName);
+  const theme = window.SMTM.getTheme(themeName);
   if (!theme || !theme.calendar) {
     console.error(`Show Me The Money: Calendar theme "${themeName}" not found.`);
     return;
@@ -41,7 +39,7 @@ export async function createCalendarPopup(anchorElement, themeName = 'cursor') {
 
   const calendar = document.createElement('div');
   calendar.id = 'smtm-calendar-popup';
-  applyThemeStyles(calendar, themeName, 'calendar.container');
+  window.SMTM.applyThemeStyles(calendar, themeName, 'calendar.container');
   Object.assign(calendar.style, {
     position: 'absolute',
     zIndex: '10000'
@@ -49,32 +47,32 @@ export async function createCalendarPopup(anchorElement, themeName = 'cursor') {
 
   // --- Calendar Header ---
   const header = document.createElement('div');
-  applyThemeStyles(header, themeName, 'calendar.title');
+  window.SMTM.applyThemeStyles(header, themeName, 'calendar.title');
 
   const monthDisplay = document.createElement('div');
-  applyThemeStyles(monthDisplay, themeName, 'calendar.month');
+  window.SMTM.applyThemeStyles(monthDisplay, themeName, 'calendar.month');
   const monthText = document.createElement('span');
-  applyThemeStyles(monthText, themeName, 'calendar.monthText');
+  window.SMTM.applyThemeStyles(monthText, themeName, 'calendar.monthText');
   monthDisplay.appendChild(monthText);
 
   const navButtons = document.createElement('div');
-  applyThemeStyles(navButtons, themeName, 'calendar.navButtons');
+  window.SMTM.applyThemeStyles(navButtons, themeName, 'calendar.navButtons');
 
   const prevButton = document.createElement('button');
-  applyThemeStyles(prevButton, themeName, 'calendar.navButton');
+  window.SMTM.applyThemeStyles(prevButton, themeName, 'calendar.navButton');
   prevButton.innerHTML = `<img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nMTYnIGhlaWdodD0nMTYnIHZpZXdCb3g9JzAgMCAxNiAxNicgZmlsbD0nbm9uZScgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz4KPHBhdGggZD0nTTkuNjQ2MjIgMTMuMzUzN0w0LjY0NjIyIDguMzUzNzJDNC41OTk3MyA4LjMwNzI5IDQuNTYyODUgOC4yNTIxNCA0LjUzNzY5IDguMTkxNDRDNC41MTI1MiA4LjEzMDc0IDQuNDk5NTcgOC4wNjU2OCA0LjQ5OTU3IDcuOTk5OTdDNC44OTk1NyA3LjkzNDI3IDQuNTEyNTIgNy44NjkyIDQuNTM3NjkgNy44MDg1QzQuNTYyODUgNy43NDc4IDQuNTk5NzMgNy42OTI2NiA0LjY0NjIyIDcuNjQ2MjJMOS42NDYyMiAyLjY0NjIyQzkuNzQwMDQgMi41NTI0IDkuODY3MjggMi40OTk3IDkuOTk5OTcgMi40OTk3QzEwLjEzMjYgMi40OTk3IDEwLjI1OTkgMi41NTI0IDEwLjM1MzcgMi42NDYyMkMxMC40NDc1IDIuNzQwMDQgMTAuNTAwMiAyLjg2NzI5IDEwLjUwMDIgMi45OTk5N0MxMC41MDAyIDMuMTMyNjYgMTAuNDQ3NSAzLjI1OTkgMTAuMzUzNyAzLjM1MzcyTDUuNzA2ODQgNy45OTk5N0wxMC4zNTM3IDEyLjY0NjJDMTAuNDAwMiAxMi42OTI3IDEwLjQzNyAxMi43NDc4IDEwLjQ2MjIgMTIuODA4NUMxMC40ODczIDEyLjg2OTIgMTAuNTAwMiAxMi45MzQzIDEwLjUwMDIgMTNDMTAuNTAwMiAxMy4wNjU3IDEwLjQ4NzMgMTMuMTMwNyAxMC40NjIyIDEzLjE5MTRDMTAuNDM3IDEzLjI1MjEgMTAuNDAwMiAxMy4zMDczIDEwLjM1MzcgMTMuMzUzN0MxMC4zMDczIDEzLjQwMDIgMTAuMjUyMSAxMy40MzcgMTAuMTkxNCAxMy40NjIyQzEwLjEzMDcgMTMuNDg3MyAxMC4wNjU3IDEzLjUwMDMgOS45OTk5NyAxMy41MDAzQzkuOTM0MjcgMTMuNTAwMyA5Ljg2OTIxIDEzLjQ4NzMgOS44MDg1MiAxMy40NjIyQzkuNzQ3ODIgMTMuNDM3IDkuNjkyNjcgMTMuNDAwMiA5LjY0NjIyIDEzLjM1MzdaJyBmaWxsPSd3aGl0ZScvPgo8L3N2Zz4K" />`;
-  prevButton.onmouseover = () => applyThemeStyles(prevButton, themeName, 'calendar.navButton', 'hover');
-  prevButton.onmouseout = () => applyThemeStyles(prevButton, themeName, 'calendar.navButton', 'default');
+  prevButton.onmouseover = () => window.SMTM.applyThemeStyles(prevButton, themeName, 'calendar.navButton', 'hover');
+  prevButton.onmouseout = () => window.SMTM.applyThemeStyles(prevButton, themeName, 'calendar.navButton', 'default');
   prevButton.onclick = () => {
     displayDate.setMonth(displayDate.getMonth() - 1);
     renderCalendarGrid();
   };
 
   const nextButton = document.createElement('button');
-  applyThemeStyles(nextButton, themeName, 'calendar.navButton');
+  window.SMTM.applyThemeStyles(nextButton, themeName, 'calendar.navButton');
   nextButton.innerHTML = `<img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nMTYnIGhlaWdodD0nMTYnIHZpZXdCb3g9JzAgMCAxNiAxNicgZmlsbD0nbm9uZScgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz4KPHBhdGggZD0nTTYuMzUzNzggMi42NDYyOEwxMS4zNTM4IDcuNjQ2MjhDMTEuNDAwMyA3LjY5MjcxIDExLjQzNzIgNy43NDc4NiAxMS40NjIzIDcuODA4NTZDMTEuNDg3NSA3Ljg2OTI2IDExLjUwMDQgNy45MzQzMiAxMS41MDA0IDguMDAwMDNDMTEuNTAwNCA4LjA2NTczIDExLjQ4NzUgOC4xMzA4IDExLjQ2MjMgOC4xOTE1QzExLjQzNzIgOC4yNTIyIDExLjQwMDMgOC4zMDczNCAxMS4zNTM4IDguMzUzNzhMNi4zNTM3OCAxMy4zNTM4QzYuMjU5OTYgMTMuNDQ3NiA2LjEzMjcyIDEzLjUwMDMgNi4wMDAwMyAxMy41MDAzQzUuODY3MzUgMTMuNTAwMyA1Ljc0MDEgMTMuNDQ3NiA1LjY0NjI4IDEzLjM1MzhDNS41NTI0NiAxMy4yNiA1LjQ5OTc2IDEzLjEzMjcgNS40OTk3NiAxM0M1LjQ5OTc2IDEyLjg2NzMgNS41NTI0NiAxMi43NDAxIDUuNjQ2MjggMTIuNjQ2M0wxMC4yOTMyIDguMDAwMDNMNS42NDYyOCAzLjM1Mzc4QzUuNTk5ODMgMy4zMDczMiA1LjU2Mjk4IDMuMjUyMTcgNS41Mzc4NCAzLjE5MTQ3QzUuNTEyNyAzLjEzMDc4IDUuNDk5NzYgMy4wNjU3MiA1LjQ5OTc2IDMuMDAwMDNDNS40OTk3NiAyLjkzNDMzIDUuNTEyNyAyLjg2OTI4IDUuNTM3ODQgMi44MDg1OEM1LjU2Mjk4IDIuNzQ3ODggNS41OTk4MyAyLjY5MjczIDUuNjQ2MjggMi42NDYyOEM1LjY5Mjc0IDIuNTk5ODIgNS43NDc4OSAyLjU2Mjk3IDUuODA4NTkgMi41Mzc4M0M1Ljg2OTI4IDIuNTEyNjkgNS45MzQzNCAyLjQ5OTc1IDYuMDAwMDMgMi40OTk3NUM2LjA2NTczIDIuNDk5NzUgNi4xMzA3OSAyLjUxMjY5IDYuMTkxNDggMi41Mzc4M0M2LjI1MjE4IDIuNTYyOTcgNi4zMDczMyAyLjU5OTgyIDYuMzUzNzggMi42NDYyOFonIGZpbGw9J3doaXRlJy8+Cjwvc3ZnPgo=" />`;
-  nextButton.onmouseover = () => applyThemeStyles(nextButton, themeName, 'calendar.navButton', 'hover');
-  nextButton.onmouseout = () => applyThemeStyles(nextButton, themeName, 'calendar.navButton', 'default');
+  nextButton.onmouseover = () => window.SMTM.applyThemeStyles(nextButton, themeName, 'calendar.navButton', 'hover');
+  nextButton.onmouseout = () => window.SMTM.applyThemeStyles(nextButton, themeName, 'calendar.navButton', 'default');
   nextButton.onclick = () => {
     const nextMonth = new Date(displayDate);
     nextMonth.setMonth(displayDate.getMonth() + 1);
@@ -121,11 +119,11 @@ export async function createCalendarPopup(anchorElement, themeName = 'cursor') {
 
     const weekDays = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
     const weekRow = document.createElement('div');
-    applyThemeStyles(weekRow, themeName, 'calendar.week');
+    window.SMTM.applyThemeStyles(weekRow, themeName, 'calendar.week');
     weekDays.forEach(day => {
       const dayCell = document.createElement('div');
       dayCell.innerText = day;
-      applyThemeStyles(dayCell, themeName, 'calendar.weekDay');
+      window.SMTM.applyThemeStyles(dayCell, themeName, 'calendar.weekDay');
       weekRow.appendChild(dayCell);
     });
     grid.appendChild(weekRow);
@@ -140,10 +138,10 @@ export async function createCalendarPopup(anchorElement, themeName = 'cursor') {
     let date = 1;
     for (let i = 0; i < 6; i++) {
       const week = document.createElement('div');
-      applyThemeStyles(week, themeName, 'calendar.week');
+      window.SMTM.applyThemeStyles(week, themeName, 'calendar.week');
       for (let j = 0; j < 7; j++) {
         const dayCell = document.createElement('div');
-        applyThemeStyles(dayCell, themeName, 'calendar.day');
+        window.SMTM.applyThemeStyles(dayCell, themeName, 'calendar.day');
 
         if (i === 0 && j < startingDay) {
           // Empty cells before the start of the month
@@ -160,7 +158,7 @@ export async function createCalendarPopup(anchorElement, themeName = 'cursor') {
 
           if (isFutureDate) {
             dayCell.classList.add('calendar-date-disabled');
-            applyThemeStyles(dayCell, themeName, 'calendar.day', 'disabled');
+            window.SMTM.applyThemeStyles(dayCell, themeName, 'calendar.day', 'disabled');
             dayCell.style.cursor = 'default';
           } else {
             const isSelected = selectedDate &&
@@ -169,17 +167,17 @@ export async function createCalendarPopup(anchorElement, themeName = 'cursor') {
               currentDate.getDate() === selectedDate.getDate();
 
             if (isSelected) {
-              applyThemeStyles(dayCell, themeName, 'calendar.day', 'today'); // Use 'today' style for selected
+              window.SMTM.applyThemeStyles(dayCell, themeName, 'calendar.day', 'today'); // Use 'today' style for selected
             }
 
             dayCell.onmouseover = () => {
               if (!isSelected) {
-                applyThemeStyles(dayCell, themeName, 'calendar.day', 'hover');
+                window.SMTM.applyThemeStyles(dayCell, themeName, 'calendar.day', 'hover');
               }
             };
             dayCell.onmouseout = () => {
               if (!isSelected) {
-                applyThemeStyles(dayCell, themeName, 'calendar.day', 'default');
+                window.SMTM.applyThemeStyles(dayCell, themeName, 'calendar.day', 'default');
                 dayCell.style.backgroundColor = '';
               }
             };
@@ -204,11 +202,11 @@ export async function createCalendarPopup(anchorElement, themeName = 'cursor') {
               const sinceButton = document.querySelector('.smtm-since-button');
               if (sinceButton) {
                 sinceButton.classList.add('active');
-                applyThemeStyles(sinceButton, themeName, 'panelSinceButton', 'active');
+                window.SMTM.applyThemeStyles(sinceButton, themeName, 'panelSinceButton', 'active');
               }
               document.querySelectorAll('#smtm-presets-container button').forEach(btn => {
                 btn.classList.remove('active');
-                applyThemeStyles(btn, themeName, 'button', 'default');
+                window.SMTM.applyThemeStyles(btn, themeName, 'button', 'default');
               });
 
               closeCalendar();

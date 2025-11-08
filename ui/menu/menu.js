@@ -2,15 +2,13 @@
  * @fileoverview This file contains the logic for the extension's popup menu.
  */
 
-import { applyThemeStyles, loadThemes, getTheme } from '/ui/theme.js';
-
 /**
  * Applies menu styles from theme
  */
 function applyMenuStyles() {
   // Use 'cursor' theme by default (same as content.js)
   const themeName = 'cursor';
-  const theme = getTheme(themeName);
+  const theme = window.SMTM.getTheme(themeName);
 
   if (!theme || !theme.menu) {
     console.warn('Show Me The Money: Menu theme not found, using fallback styles');
@@ -29,62 +27,62 @@ function applyMenuStyles() {
 
   // Apply styles using menu theme structure
   if (container && theme.menu.menuContainer) {
-    applyThemeStyles(container, themeName, 'menu.menuContainer');
+    window.SMTM.applyThemeStyles(container, themeName, 'menu.menuContainer');
   }
 
   if (toggleRow && theme.menu.menuToggleRow) {
-    applyThemeStyles(toggleRow, themeName, 'menu.menuToggleRow');
+    window.SMTM.applyThemeStyles(toggleRow, themeName, 'menu.menuToggleRow');
   }
 
   if (toggleText && theme.menu.menuToggleText) {
-    applyThemeStyles(toggleText, themeName, 'menu.menuToggleText');
+    window.SMTM.applyThemeStyles(toggleText, themeName, 'menu.menuToggleText');
   }
 
   if (toggleButton && theme.menu.menuToggleButton) {
-    applyThemeStyles(toggleButton, themeName, 'menu.menuToggleButton');
+    window.SMTM.applyThemeStyles(toggleButton, themeName, 'menu.menuToggleButton');
 
     // Add hover state
     if (theme.menu.menuToggleButton.hover) {
       toggleButton.addEventListener('mouseenter', () => {
-        applyThemeStyles(toggleButton, themeName, 'menu.menuToggleButton', 'hover');
+        window.SMTM.applyThemeStyles(toggleButton, themeName, 'menu.menuToggleButton', 'hover');
       });
 
       toggleButton.addEventListener('mouseleave', () => {
-        applyThemeStyles(toggleButton, themeName, 'menu.menuToggleButton');
+        window.SMTM.applyThemeStyles(toggleButton, themeName, 'menu.menuToggleButton');
       });
     }
   }
 
   if (buttonWrapper && theme.menu.menuButtonWrapper) {
-    applyThemeStyles(buttonWrapper, themeName, 'menu.menuButtonWrapper');
+    window.SMTM.applyThemeStyles(buttonWrapper, themeName, 'menu.menuButtonWrapper');
   }
 
   if (button && theme.menu.menuButton) {
-    applyThemeStyles(button, themeName, 'menu.menuButton');
+    window.SMTM.applyThemeStyles(button, themeName, 'menu.menuButton');
 
     // Add hover state
     if (theme.menu.menuButton.hover) {
       button.addEventListener('mouseenter', () => {
-        applyThemeStyles(button, themeName, 'menu.menuButton', 'hover');
+        window.SMTM.applyThemeStyles(button, themeName, 'menu.menuButton', 'hover');
       });
 
       button.addEventListener('mouseleave', () => {
-        applyThemeStyles(button, themeName, 'menu.menuButton');
+        window.SMTM.applyThemeStyles(button, themeName, 'menu.menuButton');
       });
     }
   }
 
   if (helpBlock && theme.menu.menuHelpBlock) {
-    applyThemeStyles(helpBlock, themeName, 'menu.menuHelpBlock');
+    window.SMTM.applyThemeStyles(helpBlock, themeName, 'menu.menuHelpBlock');
   }
 
   if (helpTitle && theme.menu.menuHelpTitle) {
-    applyThemeStyles(helpTitle, themeName, 'menu.menuHelpTitle');
+    window.SMTM.applyThemeStyles(helpTitle, themeName, 'menu.menuHelpTitle');
   }
 
   if (helpTexts.length > 0 && theme.menu.menuHelpText) {
     helpTexts.forEach(text => {
-      applyThemeStyles(text, themeName, 'menu.menuHelpText');
+      window.SMTM.applyThemeStyles(text, themeName, 'menu.menuHelpText');
     });
   }
 }
@@ -96,8 +94,8 @@ if (document.readyState === 'loading') {
   init();
 }
 
-async function init() {
-  await loadThemes();
+window.SMTM.init = async function() {
+  await window.SMTM.loadThemes();
   applyMenuStyles();
 
   const toggleButton = document.querySelector('.smtm-menu-toggle-button');
@@ -151,7 +149,7 @@ async function init() {
   const clearButton = document.querySelector('.smtm-menu-button');
   if (clearButton) {
     const originalText = clearButton.textContent;
-    const theme = getTheme('cursor');
+    const theme = window.SMTM.getTheme('cursor');
 
     clearButton.addEventListener('click', () => {
       // Send a message to the content script to clear the data
@@ -171,7 +169,7 @@ async function init() {
         clearButton.textContent = originalText;
         // Re-apply original styles from the theme
         if (theme && theme.menu && theme.menu.menuButton) {
-          applyThemeStyles(clearButton, 'cursor', 'menu.menuButton');
+          window.SMTM.applyThemeStyles(clearButton, 'cursor', 'menu.menuButton');
         }
       }, 2500);
     });

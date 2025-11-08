@@ -2,9 +2,6 @@
  * @fileoverview This file contains the logic for creating and managing the main UI panel, including buttons, tooltips, and drag-and-drop functionality.
  */
 
-import { applyThemeStyles, getTheme } from '/ui/theme.js';
-import { savePanelPosition, getPanelPosition, getSelectedRange, saveSelectedRange, getHistory } from '/utils/storage.js';
-import { formatTooltipDate, checkForMissingDays, groupConsecutiveDates } from '/utils/date.js';
 
 const DEBUG_STYLES = true;
 
@@ -105,7 +102,7 @@ async function positionPanelInitially(panel) {
  * @param {string} themeName The name of the theme to use.
  * @returns {Promise<HTMLElement>} The created panel element.
  */
-export async function createPanel(themeName = 'dark') {
+window.SMTM.createPanel = async function(themeName = 'dark') {
     // Initialize state for range persistence
     if (!window.SMTM.state) window.SMTM.state = {};
     if (!window.SMTM.state.range) window.SMTM.state.range = '1d';
@@ -536,7 +533,7 @@ function makeDraggable(element, handle) {
  * @param {number|string} total The total amount to display.
  * @param {string} currencySymbol The currency symbol to use (e.g., '$').
  */
-export function updateTotal(total, currencySymbol = '') {
+window.SMTM.updateTotal = function(total, currencySymbol = '') {
     const totalValue = document.getElementById('smtm-total-value');
     if (totalValue) {
         if (typeof total === 'number' && total > 0) {
@@ -596,7 +593,7 @@ function createTooltip(element, text, themeName) {
  * @param {string} themeName The name of the theme to use.
  * @param {Array<string>} missingDays An array of missing day strings.
  */
-export function toggleMissingDataLabel(themeName, missingDays) {
+window.SMTM.toggleMissingDataLabel = function(themeName, missingDays) {
     const panel = document.getElementById('show-me-the-money-panel');
     if (!panel) return;
 
@@ -712,7 +709,7 @@ function toggleInfoTooltip(themeName, show) {
 /**
  * Updates the "Since" button text based on the selected date in localStorage.
  */
-export function updateSinceButtonText() {
+window.SMTM.updateSinceButtonText = function() {
   const sinceButton = document.querySelector('.smtm-since-button');
   if (!sinceButton) return;
 
@@ -742,7 +739,7 @@ export function updateSinceButtonText() {
  * for style changes that might make it visible again.
  * @param {HTMLElement} panel The main panel element.
  */
-export function enforceHiddenState(panel) {
+window.SMTM.enforceHiddenState = function(panel) {
   const missingDataContainer = document.getElementById('smtm-missing-data-container');
   const infoTooltipContainer = document.getElementById('smtm-info-tooltip-container');
 
@@ -779,7 +776,7 @@ export function enforceHiddenState(panel) {
  * @param {Date} startDate The start date for the total.
  * @param {Date} endDate The end date for the total.
  */
-export function updateTotalDisplay(startDate, endDate) {
+window.SMTM.updateTotalDisplay = function(startDate, endDate) {
   const history = getHistory();
 
   if (!startDate) {
@@ -822,4 +819,12 @@ export function updateTotalDisplay(startDate, endDate) {
   } else {
     toggleMissingDataLabel(theme, []);
   }
+}
+
+window.SMTM.blinkDebugBadge = function(element) {
+  const originalBorder = element.style.border;
+  element.style.border = '2px solid red';
+  setTimeout(() => {
+    element.style.border = originalBorder;
+  }, 500);
 }

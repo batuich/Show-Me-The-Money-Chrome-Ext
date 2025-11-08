@@ -2,10 +2,7 @@
  * @fileoverview This file handles the initialization of the extension, including loading themes and configuration, creating the UI, and setting up observers.
  */
 
-import { createPanel, createDebugBadge, enforceHiddenState, updateSinceButtonText } from '/ui/panel.js';
-import { processTransactions } from '/core/main.js';
-import { setupTableObserver, setupIntegrityCheck, setupScrollListener } from '/core/observer.js';
-import { loadThemes } from '/ui/theme.js';
+window.SMTM = window.SMTM || {};
 
 /**
  * Initializes the extension.
@@ -21,7 +18,7 @@ async function init() {
   console.log("Show Me The Money: Initializing...");
 
   // Wait for themes to be loaded
-  await loadThemes();
+  await window.SMTM.loadThemes();
 
   // Load configuration
   try {
@@ -57,51 +54,45 @@ async function init() {
   // Create the panel and insert it into the DOM when appropriate
   let panel = null;
   if (shouldRenderPanel) {
-    panel = await createPanel(theme);
+    panel = await window.SMTM.createPanel(theme);
   }
 
   // The panel's position is handled by createPanel and restorePanelPosition
 
   // Initial parsing and update
   window.SMTM.debug.log('📊 Starting initial processTransactions...');
-  processTransactions();
+  window.SMTM.processTransactions();
 
   // Set up table observer with debouncing
-  setupTableObserver();
+  window.SMTM.setupTableObserver();
 
   // Set up periodic integrity check
-  setupIntegrityCheck();
+  window.SMTM.setupIntegrityCheck();
 
   // Set up scroll listener
-  setupScrollListener();
+  window.SMTM.setupScrollListener();
 
   // Restore and enforce visibility state from localStorage
   if (panel && storedVisibility === 'hidden') {
-    enforceHiddenState(panel);
+    window.SMTM.enforceHiddenState(panel);
   }
 
   // Initial update for the "Since" button
   if (panel) {
-    updateSinceButtonText();
+    window.SMTM.updateSinceButtonText();
   }
 }
 
 // Ensure the script runs after the page has fully loaded
-if (document.readyState === 'loading') {
-  window.SMTM.debug.log('⏳ Waiting for DOMContentLoaded...');
-  document.addEventListener('DOMContentLoaded', () => {
-    window.SMTM.debug.log('✅ DOMContentLoaded fired');
-    createDebugBadge();
-    init();
-  });
-} else {
-  window.SMTM.debug.log('✅ DOM already ready');
-  // Create debug badge immediately if DOM is ready
-  if (document.body) {
-    createDebugBadge();
+window.SMTM.init = async function() {
+  if (document.readyState === 'loading') {
+    window.SMTM.debug.log('⏳ Waiting for DOMContentLoaded...');
+    document.addEventListener('DOMContentLoaded', () => {
+      window.SMTM.debug.log('✅ DOMContentLoaded fired');
+      init();
+    });
   } else {
-    // Wait a bit if body isn't ready yet
-    setTimeout(createDebugBadge, 100);
+    window.SMTM.debug.log('✅ DOM already ready');
+    init();
   }
-  init();
 }

@@ -1,6 +1,6 @@
 // utils/uiHelpers.js
 
-const SMTM_DEBUG_STYLES = true;
+const SMTM_DEBUG_STYLES = false;
 const SMTM_PIXEL_PROPS = new Set([
   'borderRadius',
   'fontSize',

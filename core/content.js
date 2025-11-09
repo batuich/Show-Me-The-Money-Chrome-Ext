@@ -17,7 +17,7 @@
   // Create global namespace and debug helpers (only once)
   if (!window.SMTM) window.SMTM = {};
   if (!window.SMTM.debug) window.SMTM.debug = {};
-  if (typeof window.SMTM.DEBUG !== 'boolean') window.SMTM.DEBUG = true;
+  if (typeof window.SMTM.DEBUG !== 'boolean') window.SMTM.DEBUG = false;
 
   if (typeof window.SMTM.debug.log !== 'function') {
     window.SMTM.debug.log = function(message, data) {

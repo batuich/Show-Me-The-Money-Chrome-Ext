@@ -2,6 +2,8 @@
 
 /**
  * Checks for missing days in the transaction history within a given date range.
+ * Filters out days without transactions (if there's data at the start and end of the period)
+ * and excludes the current day.
  * @param {Array} history An array of transaction objects.
  * @param {Date} startDate The start of the date range.
  * @param {Date} endDate The end of the date range.
@@ -10,12 +12,74 @@
 function checkForMissingDays(history, startDate, endDate) {
   const missingDays = [];
   const recordedDates = new Set(history.map(t => new Date(t.date).toDateString()));
-
-  let currentDate = new Date(startDate);
-  while (currentDate <= endDate) {
-    if (!recordedDates.has(currentDate.toDateString())) {
-      missingDays.push(currentDate.toLocaleDateString());
+  
+  // Get today's date for comparison (normalize to start of day)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayDateString = today.toDateString();
+  
+  // Normalize start and end dates for comparison
+  const normalizedStartDate = new Date(startDate);
+  normalizedStartDate.setHours(0, 0, 0, 0);
+  const normalizedEndDate = new Date(endDate);
+  normalizedEndDate.setHours(0, 0, 0, 0);
+  
+  // Find first and last dates with data in the period
+  const datesInPeriod = [];
+  let checkDate = new Date(normalizedStartDate);
+  while (checkDate <= normalizedEndDate) {
+    if (recordedDates.has(checkDate.toDateString())) {
+      datesInPeriod.push(new Date(checkDate));
     }
+    checkDate.setDate(checkDate.getDate() + 1);
+  }
+  
+  // Check if we have data at the start and end of the period
+  const hasDataAtStart = datesInPeriod.length > 0 && 
+    datesInPeriod[0].getTime() === normalizedStartDate.getTime();
+  const hasDataAtEnd = datesInPeriod.length > 0 && 
+    datesInPeriod[datesInPeriod.length - 1].getTime() === normalizedEndDate.getTime();
+  
+  // If we have data at both start and end, days without data in between are just days without transactions
+  const shouldFilterDaysWithoutTransactions = hasDataAtStart && hasDataAtEnd && datesInPeriod.length >= 2;
+  
+  // Find the first and last dates with data
+  const firstDataDate = datesInPeriod.length > 0 ? datesInPeriod[0] : null;
+  const lastDataDate = datesInPeriod.length > 0 ? datesInPeriod[datesInPeriod.length - 1] : null;
+  
+  // Check for missing days
+  let currentDate = new Date(normalizedStartDate);
+  while (currentDate <= normalizedEndDate) {
+    const currentDateString = currentDate.toDateString();
+    
+    // Skip current day - user hasn't had time to use Cursor yet today
+    if (currentDateString === todayDateString) {
+      currentDate.setDate(currentDate.getDate() + 1);
+      continue;
+    }
+    
+    // Skip if date has data
+    if (recordedDates.has(currentDateString)) {
+      currentDate.setDate(currentDate.getDate() + 1);
+      continue;
+    }
+    
+    // If we should filter days without transactions and this day is between first and last data dates
+    if (shouldFilterDaysWithoutTransactions && firstDataDate && lastDataDate) {
+      const currentTime = currentDate.getTime();
+      const firstTime = firstDataDate.getTime();
+      const lastTime = lastDataDate.getTime();
+      
+      // If this day is between first and last data dates, it's just a day without transactions
+      // (we collect all visible data, so if there's no data, there were no transactions)
+      if (currentTime > firstTime && currentTime < lastTime) {
+        currentDate.setDate(currentDate.getDate() + 1);
+        continue;
+      }
+    }
+    
+    // This is a truly missing day (no data at start/end or outside the data range)
+    missingDays.push(currentDate.toLocaleDateString());
     currentDate.setDate(currentDate.getDate() + 1);
   }
 

@@ -1,15 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "Show Me The Money",
-  "version": "1.0",
-  "description": "Automatically summarizes credit usage on specified websites.",
-  "permissions": [
-    "activeTab"
-  ],
+  "name": "Cursor Spends Lite",
+  "version": "0.1.0",
+  "description": "Summarizes credit usage on the Cursor site with a minimal interface.",
+  "permissions": [],
   "content_scripts": [
     {
       "matches": [
-        "https://cursor.com/spending",
         "https://cursor.com/dashboard*"
       ],
       "js": [
@@ -33,7 +30,7 @@
       "assets/icons/eye-open.svg",
       "assets/icons/eye-closed.svg"
     ],
-    "matches": ["<all_urls>"]
+    "matches": ["https://cursor.com/*"]
   }],
   "action": {
     "default_popup": "ui/menu/index.html",

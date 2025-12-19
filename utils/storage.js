@@ -98,21 +98,32 @@ function mergeDailyData(newData) {
   log('New dates to merge:', Object.keys(newData).length);
 
   for (const [date, cost] of Object.entries(newData)) {
-    // Add new dates or update if the new cost is greater (accumulation over time)
+    // Add new dates or update if the cost differs (replace on re-parse of same table)
     if (!existingData[date]) {
       existingData[date] = cost;
       updateCount++;
       newDatesCount++;
       log(`✨ NEW: ${date} = $${cost.toFixed(4)}`);
-    } else if (cost > existingData[date]) {
-      const oldCost = existingData[date];
-      existingData[date] = cost;
-      updateCount++;
-      updatedDatesCount++;
-      log(`📈 UPDATED: ${date} = $${cost.toFixed(4)} (was $${oldCost.toFixed(4)})`);
     } else {
-      skippedDatesCount++;
-      log(`⏭️ SKIPPED: ${date} = $${cost.toFixed(4)} (existing $${existingData[date].toFixed(4)} is >= new value)`);
+      const oldCost = existingData[date];
+      const costDiff = Math.abs(cost - oldCost);
+      // Update if cost differs significantly (more than 0.0001 to account for floating point precision)
+      if (costDiff > 0.0001) {
+        // If new cost is greater, update (accumulation over time)
+        // If new cost is less, also update (re-parse of same table with corrected data)
+        existingData[date] = cost;
+        updateCount++;
+        if (cost > oldCost) {
+          updatedDatesCount++;
+          log(`📈 UPDATED (increased): ${date} = $${cost.toFixed(4)} (was $${oldCost.toFixed(4)})`);
+        } else {
+          updatedDatesCount++;
+          log(`📉 UPDATED (decreased): ${date} = $${cost.toFixed(4)} (was $${oldCost.toFixed(4)}) - likely re-parse`);
+        }
+      } else {
+        skippedDatesCount++;
+        log(`⏭️ SKIPPED: ${date} = $${cost.toFixed(4)} (same as existing $${existingData[date].toFixed(4)})`);
+      }
     }
   }
 

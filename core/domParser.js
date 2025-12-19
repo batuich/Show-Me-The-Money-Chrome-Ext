@@ -24,30 +24,151 @@ function simpleHash(str) {
 /**
  * Parses a `div`-based table (found on `cursor.com/dashboard`).
  * @param {HTMLElement} table The table element.
- * @returns {Array} An array of transaction objects.
+ * @returns {Object} An object mapping dates to daily costs { "YYYY-MM-DD": cost, ... }.
  */
 function parseDivTable(table) {
-    const transactions = [];
-    const rows = table.querySelectorAll('div[role="row"]');
+    console.log('[parseDivTable] START');
+    group('parseDivTable started');
+    log('Table element:', table);
+    log('Table classes:', table.className);
+    console.log('[parseDivTable] Table classes:', table.className);
+    
+    const dailyCosts = {};
+    // Find rows container to exclude header row
+    const rowsContainer = table.querySelector('.dashboard-table-rows') || table;
+    log('Rows container found:', !!rowsContainer);
+    log('Rows container classes:', rowsContainer.className);
+    console.log('[parseDivTable] Rows container classes:', rowsContainer.className);
+    
+    // Use dashboard-table-row class to find actual data rows (excludes header)
+    let rows = rowsContainer.querySelectorAll('.dashboard-table-row');
+    log(`Total .dashboard-table-row found: ${rows.length}`);
+    console.log('[parseDivTable] Total .dashboard-table-row found:', rows.length);
+    
+    // Fallback: if no dashboard-table-row found, use div[role="row"]
+    if (rows.length === 0) {
+        const fallbackRows = rowsContainer.querySelectorAll('div[role="row"]');
+        log(`Fallback: Total div[role="row"] found: ${fallbackRows.length}`);
+        // Use fallback rows but filter out header
+        rows = Array.from(fallbackRows).filter(row => 
+            !row.classList.contains('dashboard-table-header-row') && 
+            !row.querySelector('div[role="columnheader"]')
+        );
+        log(`After filtering header rows: ${rows.length}`);
+    }
 
-    rows.forEach(row => {
+    rows.forEach((row, rowIndex) => {
+        // Skip header row
+        if (row.classList.contains('dashboard-table-header-row') || 
+            row.querySelector('div[role="columnheader"]')) {
+            log(`Row ${rowIndex}: Skipped (header row)`);
+            return;
+        }
+
         const cells = row.querySelectorAll('div[role="cell"]');
-        if (cells.length >= 2) {
-            const dateText = cells[0].innerText.trim();
-            const amountText = cells[1].innerText.trim();
-            const date = new Date(dateText);
+        // Need at least 5 cells (Date, Type, Model, Tokens, Cost)
+        if (cells.length < 5) {
+            log(`Row ${rowIndex}: Skipped (not enough cells: ${cells.length})`);
+            return; // Skip invalid rows
+        }
 
-            if (!isNaN(date.getTime())) {
-                const amount = parseFloat(amountText);
-                if (!isNaN(amount)) {
-                    const rowContent = `${dateText}-${amountText}`;
-                    const id = simpleHash(rowContent);
-                    transactions.push({ id, date: date.toISOString().split('T')[0], amount: Math.abs(amount) });
+        // Get date from first cell - prefer span title attribute, fallback to innerText
+        const firstCell = cells[0];
+        const dateSpan = firstCell.querySelector('span[title]');
+        const dateText = dateSpan ? dateSpan.getAttribute('title') : firstCell.innerText.trim();
+        
+        if (!dateText) {
+            log(`Row ${rowIndex}: Skipped (no date found)`);
+            return; // Skip if no date found
+        }
+
+        // Normalize date: "Dec 15, 2025, 09:12:55 PM" -> "2025-12-15"
+            const date = new Date(dateText);
+        if (isNaN(date.getTime())) {
+            log(`Row ${rowIndex}: Skipped (invalid date: "${dateText}")`);
+            return; // Skip if date is invalid
+        }
+        const normalizedDate = date.toISOString().split('T')[0];
+
+        // Get amount from last cell (Cost column)
+        const lastCell = cells[cells.length - 1];
+        let amount = 0;
+        let extractMethod = 'none';
+        
+        // Try to find div with title attribute containing "$"
+        // Note: title might be HTML-encoded like "&lt;$0.01"
+        const costDivs = lastCell.querySelectorAll('div[title]');
+        for (const div of costDivs) {
+            const costTitle = div.getAttribute('title');
+            // Decode HTML entities and check if contains "$"
+            const decodedTitle = costTitle.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+            if (decodedTitle.includes('$')) {
+                // Extract numeric value from title like "$0.01" or "<$0.01"
+                amount = parseFloat(decodedTitle.replace(/[^0-9.-]+/g, ''));
+                extractMethod = 'div[title]';
+                log(`Row ${rowIndex}: Found cost from div title: "${costTitle}" (decoded: "${decodedTitle}") -> ${amount}`);
+                break;
+            }
+        }
+        
+        // Fallback: check if there's a span with "$" prefix
+        if (amount === 0 || isNaN(amount)) {
+            const costSpans = lastCell.querySelectorAll('span');
+            for (const span of costSpans) {
+                const costText = span.innerText.trim();
+                if (costText.startsWith('$')) {
+                    amount = parseFloat(costText.replace(/[^0-9.-]+/g, ''));
+                    extractMethod = 'span';
+                    log(`Row ${rowIndex}: Found cost from span text: "${costText}" -> ${amount}`);
+                    break;
                 }
             }
         }
+
+        // Check if it's "Included" - only skip if amount is 0 or NaN
+        const lastCellText = lastCell.innerText.trim();
+        const isIncluded = lastCellText.includes('Included');
+        
+        if (isIncluded && (isNaN(amount) || amount === 0)) {
+            log(`Row ${rowIndex}: Skipped (Included with no cost)`);
+            return; // Skip included items with no cost
+        }
+
+        // Aggregate costs for the same day
+        if (!isNaN(amount) && amount > 0) {
+            const absAmount = Math.abs(amount);
+            if (dailyCosts[normalizedDate]) {
+                dailyCosts[normalizedDate] += absAmount;
+                log(`Row ${rowIndex}: ✅ Added to existing date - Date: ${normalizedDate}, Amount: $${absAmount.toFixed(4)}, Total: $${dailyCosts[normalizedDate].toFixed(4)}, Method: ${extractMethod}`);
+                console.log(`[parseDivTable] Row ${rowIndex}: Added to ${normalizedDate}, +$${absAmount.toFixed(4)}, Total: $${dailyCosts[normalizedDate].toFixed(4)}`);
+            } else {
+                dailyCosts[normalizedDate] = absAmount;
+                log(`Row ${rowIndex}: ✅ New date entry - Date: ${normalizedDate}, Amount: $${absAmount.toFixed(4)}, Method: ${extractMethod}`);
+                console.log(`[parseDivTable] Row ${rowIndex}: New date ${normalizedDate}, $${absAmount.toFixed(4)}`);
+            }
+        } else {
+            log(`Row ${rowIndex}: Skipped (invalid amount: ${amount}, isNaN: ${isNaN(amount)})`);
+        }
     });
-    return transactions;
+    
+    log(`Total unique dates found: ${Object.keys(dailyCosts).length}`);
+    log(`Total rows processed: ${rows.length}`);
+    console.log('[parseDivTable] Total unique dates:', Object.keys(dailyCosts).length);
+    console.log('[parseDivTable] Total rows processed:', rows.length);
+    
+    // Detailed summary by date
+    group('Daily costs summary');
+    for (const [date, cost] of Object.entries(dailyCosts)) {
+      log(`${date}: $${cost.toFixed(4)}`);
+      console.log(`[parseDivTable] ${date}: $${cost.toFixed(4)}`);
+    }
+    groupEnd();
+    
+    log('Final daily costs object:', dailyCosts);
+    console.log('[parseDivTable] Final daily costs:', dailyCosts);
+    groupEnd();
+    
+    return dailyCosts;
 }
 
 /**
@@ -249,18 +370,51 @@ async function parseHtmlTable(tableElement) {
 
 /**
  * Parses the transaction table on the page, supporting multiple structures.
- * @returns {Promise<Object|Array>} An object mapping dates to costs for HTML tables, or an array of transaction objects for div tables.
+ * @returns {Promise<Object>} An object mapping dates to daily costs { "YYYY-MM-DD": cost, ... }.
  */
 async function parseTransactionTable() {
     group('parseTransactionTable - Table detection');
     log('Timestamp:', new Date().toISOString());
     log('document.readyState:', document.readyState);
+    log('URL:', window.location.href);
     
-    // Check for div table
-    const divTable = document.querySelector('div[role="table"]');
+    // Check for div table - try multiple selectors
+    let divTable = document.querySelector('div[role="table"]');
     log('div[role="table"] found?', !!divTable);
+    
+    // Try alternative selectors if first one doesn't work
+    if (!divTable) {
+        log('Trying alternative selectors...');
+        divTable = document.querySelector('.dashboard-table-scroll-container[role="table"]');
+        log('.dashboard-table-scroll-container[role="table"] found?', !!divTable);
+    }
+    
+    if (!divTable) {
+        // Check all divs with role="table"
+        const allDivTables = document.querySelectorAll('div[role="table"]');
+        log('Total div[role="table"] elements:', allDivTables.length);
+        if (allDivTables.length > 0) {
+            group('All div tables found');
+            allDivTables.forEach((tbl, idx) => {
+                log(`Div table ${idx} classes:`, tbl.className);
+                log(`Div table ${idx} aria-label:`, tbl.getAttribute('aria-label'));
+                log(`Div table ${idx} HTML preview:`, tbl.outerHTML.substring(0, 300));
+            });
+            groupEnd();
+            // Use first one if found
+            if (allDivTables.length > 0) {
+                divTable = allDivTables[0];
+                log('Using first div table found');
+            }
+        }
+    }
+    
     if (divTable) {
         log('✅ Found div-based table:', divTable);
+        log('Table classes:', divTable.className);
+        log('Table aria-label:', divTable.getAttribute('aria-label'));
+        const rows = divTable.querySelectorAll('div[role="row"]');
+        log('Rows found in div table:', rows.length);
         groupEnd();
         log('[SMTM Core] Found div-based table.');
         return parseDivTable(divTable);
@@ -285,6 +439,10 @@ async function parseTransactionTable() {
             });
             groupEnd();
         }
+        
+        // Check for dashboard table rows
+        const dashboardRows = document.querySelectorAll('.dashboard-table-row');
+        log('Total .dashboard-table-row elements:', dashboardRows.length);
         
         // Check if it might be in a shadow root
         log('Checking for shadow roots...');

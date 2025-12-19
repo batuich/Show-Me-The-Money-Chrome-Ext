@@ -17,7 +17,7 @@
   // Create global namespace and debug helpers (only once)
   if (!window.SMTM) window.SMTM = {};
   if (!window.SMTM.debug) window.SMTM.debug = {};
-  if (typeof window.SMTM.DEBUG !== 'boolean') window.SMTM.DEBUG = false;
+  if (typeof window.SMTM.DEBUG !== 'boolean') window.SMTM.DEBUG = true;
 
   if (typeof window.SMTM.debug.log !== 'function') {
     window.SMTM.debug.log = function(message, data) {
@@ -215,18 +215,28 @@ function setupTableObserver() {
       return;
     }
     
-    // Find the tbody to check for content changes
-    const table = document.querySelector('table.w-full');
-    const tbody = table?.querySelector('tbody') || table;
+    // Find the table (div or HTML) to check for content changes
+    let table = document.querySelector('div[role="table"]') || 
+                document.querySelector('.dashboard-table-scroll-container[role="table"]');
+    let targetNode = null;
     
-    if (!tbody) {
-      window.SMTM.debug.log('⚠️ tbody not found for content comparison');
+    if (table) {
+      // For div table, use the rows container
+      targetNode = table.querySelector('.dashboard-table-rows') || table;
+    } else {
+      // For HTML table, use tbody
+      table = document.querySelector('table.w-full');
+      targetNode = table?.querySelector('tbody') || table;
+    }
+    
+    if (!targetNode) {
+      window.SMTM.debug.log('⚠️ Target node not found for content comparison');
       return;
     }
     
     // Get current state
-    const currentInnerText = tbody.innerText;
-    const currentChildCount = tbody.children.length;
+    const currentInnerText = targetNode.innerText;
+    const currentChildCount = targetNode.children.length;
     
     // Detect content changes (React virtual DOM updates or structural changes)
     const hasContentChange = currentInnerText !== previousInnerText || currentChildCount !== previousChildCount;
@@ -273,22 +283,38 @@ function setupTableObserver() {
     window.SMTM.debug.log(`⏱️ Debounce timer set (${DEBOUNCE_DELAY}ms)`);
   });
 
-  // Find and observe the table
-  const tableContainer = document.querySelector('table.w-full') || document.querySelector('table');
+  // Find and observe the table (div or HTML)
+  let tableContainer = document.querySelector('div[role="table"]') || 
+                       document.querySelector('.dashboard-table-scroll-container[role="table"]');
+  let tableType = 'div';
+  
+  if (!tableContainer) {
+    tableContainer = document.querySelector('table.w-full') || document.querySelector('table');
+    tableType = 'html';
+  }
+  
   window.SMTM.debug.log('Table container found?', !!tableContainer);
+  window.SMTM.debug.log('Table type:', tableType);
   
   if (tableContainer) {
       window.SMTM.debug.log('Table container type:', tableContainer.tagName);
       window.SMTM.debug.log('Table container classes:', tableContainer.className);
       
-      // Watch the <tbody> inside table.w-full, fallback to table itself
-      let targetNode = tableContainer.querySelector('tbody');
-      if (!targetNode) {
-        // Fallback: if no tbody, observe the table itself
-        targetNode = tableContainer;
-        window.SMTM.debug.log('⚠️ No tbody found, observing table directly');
+      // Determine target node based on table type
+      let targetNode = null;
+      if (tableType === 'div') {
+        // For div table, observe the rows container
+        targetNode = tableContainer.querySelector('.dashboard-table-rows') || tableContainer;
+        window.SMTM.debug.log('✅ Found div table rows container');
       } else {
-        window.SMTM.debug.log('✅ Found tbody, will observe it');
+        // For HTML table, watch the <tbody>, fallback to table itself
+        targetNode = tableContainer.querySelector('tbody');
+        if (!targetNode) {
+          targetNode = tableContainer;
+          window.SMTM.debug.log('⚠️ No tbody found, observing table directly');
+        } else {
+          window.SMTM.debug.log('✅ Found tbody, will observe it');
+        }
       }
       
       window.SMTM.debug.log('Target node for observation:', targetNode);
@@ -311,12 +337,12 @@ function setupTableObserver() {
           });
           window.SMTM.debug.log('✅ Observer started successfully');
           window.SMTM.debug.log('Observer config: { childList: true, subtree: true, characterData: true, characterDataOldValue: false, attributes: false }');
-          window.SMTM.debug.log('[SMTM Core] Observer started on table tbody with React virtual DOM detection.');
+          window.SMTM.debug.log(`[SMTM Core] Observer started on ${tableType} table with React virtual DOM detection.`);
           
           // Store observer reference for potential cleanup
           window.SMTM.tableObserver = observer;
       } else {
-          window.SMTM.debug.log('❌ Could not find tbody or suitable target');
+          window.SMTM.debug.log('❌ Could not find suitable target node');
           window.SMTM.debug.log('[SMTM Core] Could not find a suitable node to observe for table changes.');
       }
   } else {
@@ -329,7 +355,11 @@ function setupTableObserver() {
       retryTimes.forEach(delay => {
           setTimeout(() => {
               window.SMTM.debug.log(`🔄 Retry attempt at ${delay}ms...`);
-              const table = document.querySelector('table.w-full');
+              let table = document.querySelector('div[role="table"]') || 
+                          document.querySelector('.dashboard-table-scroll-container[role="table"]');
+              if (!table) {
+                table = document.querySelector('table.w-full');
+              }
               if (table && !window.SMTM.tableObserver) {
                   window.SMTM.debug.log('✅ Table found on retry! Setting up observer...');
                   setupTableObserver(); // Recursively call to set up observer
@@ -364,15 +394,26 @@ function setupIntegrityCheck() {
   
   // Function to compute hash of table content
   function computeTableHash() {
-    const table = document.querySelector('table.w-full') || document.querySelector('table');
-    if (!table) return 0;
+    let table = document.querySelector('div[role="table"]') || 
+                document.querySelector('.dashboard-table-scroll-container[role="table"]');
+    let targetNode = null;
     
-    const tbody = table.querySelector('tbody') || table;
-    const innerTextLength = tbody.innerText.length;
-    const rowCount = tbody.querySelectorAll('tr').length;
-    
-    // Combine both metrics for a more robust hash
-    return innerTextLength * 1000 + rowCount;
+    if (table) {
+      // For div table, use the rows container
+      targetNode = table.querySelector('.dashboard-table-rows') || table;
+      if (!targetNode) return 0;
+      const innerTextLength = targetNode.innerText.length;
+      const rowCount = targetNode.querySelectorAll('div[role="row"]').length;
+      return innerTextLength * 1000 + rowCount;
+    } else {
+      // For HTML table
+      table = document.querySelector('table.w-full') || document.querySelector('table');
+      if (!table) return 0;
+      const tbody = table.querySelector('tbody') || table;
+      const innerTextLength = tbody.innerText.length;
+      const rowCount = tbody.querySelectorAll('tr').length;
+      return innerTextLength * 1000 + rowCount;
+    }
   }
   
   // Initialize with current state
@@ -459,11 +500,20 @@ function setupScrollListener() {
   
   // Function to get current row count
   function getRowCount() {
-    const table = document.querySelector('table.w-full') || document.querySelector('table');
-    if (!table) return 0;
+    let table = document.querySelector('div[role="table"]') || 
+                document.querySelector('.dashboard-table-scroll-container[role="table"]');
     
-    const tbody = table.querySelector('tbody') || table;
-    return tbody.querySelectorAll('tr').length;
+    if (table) {
+      // For div table, count rows in the rows container
+      const rowsContainer = table.querySelector('.dashboard-table-rows') || table;
+      return rowsContainer.querySelectorAll('div[role="row"]').length;
+    } else {
+      // For HTML table
+      table = document.querySelector('table.w-full') || document.querySelector('table');
+      if (!table) return 0;
+      const tbody = table.querySelector('tbody') || table;
+      return tbody.querySelectorAll('tr').length;
+    }
   }
   
   // Initialize with current state

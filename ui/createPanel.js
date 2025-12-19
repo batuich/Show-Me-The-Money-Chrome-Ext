@@ -1,6 +1,6 @@
 // utils/uiHelpers.js
 
-const DEBUG_STYLES = typeof SMTM_DEBUG_STYLES === 'boolean' ? SMTM_DEBUG_STYLES : true;
+const DEBUG_STYLES = typeof SMTM_DEBUG_STYLES === 'boolean' ? SMTM_DEBUG_STYLES : false;
 let themes = {};
 
 /**
